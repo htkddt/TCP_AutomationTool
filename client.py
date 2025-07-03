@@ -3,26 +3,15 @@ import os
 import socket
 import json
 
-# if (len(sys.argv) < 3):
-#     print("*** Usage:\n\t"
-#     "- Run automation with optional build version: python client.py <build-version> <script> <ticket-id>\n\t"
-#     "- Run automation with current build version: python client.py <script> <ticket-id>\n\t"
-#     "- Shutdown server: python client.py <server> <stop>")
-#     sys.exit(1)
-
-# if len(sys.argv) == 4:
-
-#     fileSize = os.path.getsize(filePath)
-#     message = sys.argv[1] + " " + str(fileSize) + " " + sys.argv[2]
-#     message += " " + sys.argv[3]
-# else:
-#     message = sys.argv[1] + " " + sys.argv[2]
-
-#HOST = '10.148.98.226'     ## Server
-HOST = '127.0.0.1'         ## Demo
-PORT = 9999
-
 # Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 19|00|00|03|07|2025 mail1|mail2|mail3
+
+if len(sys.argv) < 2:
+    print("Usage: python client.py [local|remote]")
+    sys.exit(1)
+
+if (sys.argv[1] == "local"): HOST = '127.0.0.1'
+elif (sys.argv[1] == "remote"): HOST = '10.148.98.226'
+PORT = 9999
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
