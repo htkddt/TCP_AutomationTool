@@ -27,37 +27,43 @@ while True:
         while not recvJSON.endswith("\n"):
             recvJSON += conn.recv(1).decode()
         if recvJSON:
-            print "Data received:"
             try:
                 recvData = json.loads(recvJSON.strip())
-                # print "{}".format(json.dumps(recvData, indent=2))
             except json.JSONDecodeError, e:
                 print "{}".format(e)
-            if len(recvData) < 6:
+            if len(recvData) == 2:
                 if recvData["argv"] == "server":
-                    if recvData["value"] == "stop":
-                        print "Server was disconnected by user"
-                        connected = False
-                        break
                     if recvData["value"] == "init":
-                        print "Collect available data for client"
+                        # print "Collect available data for client"
                         files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                     if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                         folders = [name for name in os.listdir(testDir) 
                                     if os.path.isdir(os.path.join(testDir, name)) and not name.startswith('.')]
                         sendData = {
-                            "build-version":files,
-                            "test-suites":folders
+                            "argv":"client",
+                            "value": {
+                                "build-version":files,
+                                "test-suites":folders
+                            }
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                        # print "{}".format(json.dumps(sendData, indent=2))
-                        print "------------------------------------------"
+                        # print "------------------------------------------"
                         continue
-                elif recvData["argv"] == "client" and recvData["value"] == "stop":
-                    print "------------------------------------------"
-                    print "Server listenning on [{}:{}]...".format(HOST, PORT)
-                    break
+                    elif recvData["value"] == "close" or recvData["value"] == "stop":
+                        sendData = {
+                            "argv":"client",
+                            "value":"disconnected"
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                        if recvData["value"] == "close":
+                            print "Server was disconnected by user"
+                            connected = False
+                            break
+                        if recvData["value"] == "stop":
+                            print "Server listenning on [{}:{}]...".format(HOST, PORT)
+                            break
                 else:
                     print "ERROR: Incorrect request from client\nTo disconnect type: server stop or client stop"
                     print "------------------------------------------"
@@ -88,14 +94,29 @@ while True:
                 }
                 cmdJSON = json.dumps(cmdPARA)
                 cmd = "python2 in-run_tst.py " + ticket + " bdd_test"
-            try:
-                if os_system == platforms["Linux"]:    
-                    process = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                else:
-                    process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                process.communicate(input=cmdJSON.encode())
-            except Exception, error:
-                print "Error: " + str(error)
-            print "Run automation successful."
-            print "-------------------------------"
+                sendData = {
+                    "argv":"status",
+                    "value":"running"
+                }
+                sendJSON = json.dumps(sendData)
+                conn.sendall((sendJSON + "\n").encode())
+                print "Running in-run_tst.py..."
+                try:
+                    if os_system == platforms["Linux"]:    
+                        process = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    else:
+                        process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                    process.communicate(input=cmdJSON.encode())
+                except Exception, error:
+                    print "Error: " + str(error)
+                if conn:
+                    sendData = {
+                        "argv":"status",
+                        "value":"finished"
+                    }
+                    sendJSON = json.dumps(sendData)
+                    conn.sendall((sendJSON + "\n").encode())
+                print "Finished."
+                print "Run automation successful."
+                print "-------------------------------"
     if not connected: break

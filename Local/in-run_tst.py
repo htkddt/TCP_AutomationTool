@@ -20,11 +20,13 @@ import json
 testsuite_directory = []
 sender_on_windows = 'ns_gui_regression@intel.com'
 
-cc_mail1 = ""
-to_addr1 = ""
 cc_mail0 = ""
-to_addr0 = ""
-recipient = ""
+to_addr0 = "tuanx.nguyen@intel.com"
+cc_mail1 = ""
+to_addr1 = "kiet.huynh@terralogic.com"
+cc_mail2 = ""
+to_addr2 = "sangx.phan@intel.com"
+recipient=""
 
 os.environ["DISPLAY"] = ":1.0"
 platforms = {"Windows": "Windows", "Linux": "Linux"}
@@ -203,15 +205,11 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print("Running in-run_tst_py3.py...")
     try:
         jsonFile = sys.stdin.read()
         data = json.loads(jsonFile.strip())
         print(json.dumps(data, indent=2))
     except json.JSONDecodeError as e:
         print(e)
-    # print "------------------------------------------"
-    # print "{}".format(data["ticket-id"])
-    print("------------------------------------------")
-    print("Finished.")
+    time.sleep(10)
     # run_test(sys.argv[1])

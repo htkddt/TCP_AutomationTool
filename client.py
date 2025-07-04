@@ -23,9 +23,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 #--------------------------------------------------------------------------------
         msgSplit = msg.split(" ")
         if len(msgSplit) < 6:
-            if (msgSplit[0] != "client" and msgSplit[0] != "server"):
-                if msgSplit[1] != "stop":
-                    print("ERROR: Incorrect request\nTo disconnect type: server stop")
+            if (msgSplit[0] != "server"):
+                if msgSplit[1] != "init" and msgSplit[1] != "close" and msgSplit[1] != "stop":
+                    print("ERROR: Incorrect request\nTo disconnect type: server close|stop")
                     print("------------------------------------------")
                     continue
             sendData = {
@@ -44,7 +44,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         sendJSON = json.dumps(sendData)
 #--------------------------------------------------------------------------------
         s.sendall((sendJSON + "\n").encode())
-        if msgSplit[0] == "client" and msgSplit[1] == "stop": break
+        if msgSplit[0] == "server" and msgSplit[1] == "stop": break
         if (len(msgSplit) == 6) and (msgSplit[2] != "0"):
             filePath = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\{msgSplit[1]}.exe"
             with open(filePath, 'rb') as f:
@@ -56,7 +56,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         print(json.dumps(sendData, indent=2))
         print("------------------------------------------")
         if msgSplit[0] == "server":
-            if msgSplit[1] == "stop": break
+            if msgSplit[1] == "close": break
             elif msgSplit[1] == "init":
                 while True:
                     recvJSON = ""

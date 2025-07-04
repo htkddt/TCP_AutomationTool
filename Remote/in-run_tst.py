@@ -20,10 +20,12 @@ import json
 testsuite_directory = []
 sender_on_windows = 'ns_gui_regression@intel.com'
 
-cc_mail1 = ""
-to_addr1 = "sangx.phan@intel.com"
 cc_mail0 = ""
 to_addr0 = "tuanx.nguyen@intel.com"
+cc_mail1 = ""
+to_addr1 = "kiet.huynh@terralogic.com"
+cc_mail2 = ""
+to_addr2 = "sangx.phan@intel.com"
 recipient=""
 
 os.environ["DISPLAY"] = ":1.0"
@@ -120,7 +122,7 @@ def run_test(build_version=""):
     content +="\n";
     
     send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
-    # send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
+    send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
     
     shutil.rmtree("html_report")
 
@@ -203,15 +205,11 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print "Running in-run_tst.py..."
     try:
         jsonFile = sys.stdin.read()
         data = json.loads(jsonFile.strip())
         print "{}".format(json.dumps(data, indent=2))
     except json.JSONDecodeError, e:
         print "{}".format(e)
-    # print "------------------------------------------"
-    # print "{}".format(data["ticket-id"])
-    print "------------------------------------------"
-    print "Finished."
+    time.sleep(10)
     # run_test(sys.argv[1])

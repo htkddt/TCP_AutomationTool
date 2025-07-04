@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 import json
+import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QApplication, QCheckBox
@@ -21,8 +22,9 @@ class MainWindow(QMainWindow):
             self.uic.layoutReports.addWidget(checkbox)
         self.uic.layoutReports.addStretch()
 
-        self.socket = TCPSocket()
+        self.socket = TCPSocketConnection()
         self.socket.connectFinished.connect(self.initData)
+        self.socket.responseFinished.connect(self.serverResponseAct)
 
         self.uic.btnConDis.clicked.connect(self.establishConnectAct)
         self.uic.btnOK.clicked.connect(self.runAct)
@@ -36,27 +38,24 @@ class MainWindow(QMainWindow):
             Port = int(self.uic.txtPort.text())
 
             self.socket.serverAddress(HOST, Port)
-            self.socket.status = 0
             self.socket.start()
 
         elif self.uic.btnConDis.text() == "Disconnect to server":
             self.uic.btnConDis.setText("Connect to server")
             sendData = {
-                "argv":"client",
+                "argv":"server",
                 "value":"stop"
             }
-            self.socket.send_function(sendData)
+            self.socket.clientRequest(sendData)
             self.uic.txtTicket.clear()
             if (self.uic.cBoxBuildVersions.count() > 0): self.uic.cBoxBuildVersions.clear()
-            for i in range(self.uic.layoutTestSuites.count()):
-                item = self.uic.layoutTestSuites.itemAt(i)
-                widget = item.widget()
-                if isinstance(widget, QCheckBox):
-                    self.uic.layoutTestSuites.removeWidget(widget)
-                    widget.setParent(None)
-                    widget.deleteLater()
+            for i in reversed(range(self.uic.layoutTestSuites.count())):
+                checkbox = self.uic.layoutTestSuites.itemAt(i).widget()
+                if isinstance(checkbox, QCheckBox):
+                    self.uic.layoutTestSuites.removeWidget(checkbox)
+                    checkbox.setParent(None)
+                    checkbox.deleteLater()
             self.clearCheckedItems(self.uic.layoutReports)
-            self.socket.disconnect()
 
     def initData(self, connected):
         if not connected: return
@@ -64,43 +63,67 @@ class MainWindow(QMainWindow):
             "argv":"server",
             "value":"init"
         }
-        self.socket.send_function(sendData)
+        self.socket.clientRequest(sendData)
 
-        recvData = self.socket.received_function()
-        buildVersions = recvData["build-version"]
-        for build in buildVersions:
-            self.uic.cBoxBuildVersions.addItem(build)
-
-        testSuites = recvData["test-suites"]
-        for test in testSuites:
-            checkbox = QCheckBox(test)
-            self.uic.layoutTestSuites.addWidget(checkbox)
-        self.uic.layoutTestSuites.addStretch()
+    def serverResponseAct(self, recvData):
+        if (len(recvData) == 2):
+            if recvData["argv"] == "client":
+                if recvData["value"] == "disconnected":
+                    self.socket.stop()
+                elif recvData["value"] == "finished":
+                    self.uic.btnOK.setEnabled(True)
+                    self.uic.btnCancel.setEnabled(True)
+                    self.uic.btnConDis.setEnabled(True)
+                else:
+                    buildVersions = recvData["value"]["build-version"]
+                    for build in buildVersions:
+                        self.uic.cBoxBuildVersions.addItem(build)
+                    testSuites = recvData["value"]["test-suites"]
+                    for test in testSuites:
+                        checkbox = QCheckBox(test)
+                        self.uic.layoutTestSuites.addWidget(checkbox)
+                    self.uic.layoutTestSuites.addStretch()
+            elif recvData["argv"] == "status":
+                if recvData["value"] == "running":
+                    self.uic.btnOK.setEnabled(False)
+                    self.uic.btnCancel.setEnabled(False)
+                    self.uic.btnConDis.setEnabled(False)
+                elif recvData["value"] == "finished":
+                    self.uic.btnOK.setEnabled(True)
+                    self.uic.btnCancel.setEnabled(True)
+                    self.uic.btnConDis.setEnabled(True)
 
     def runAct(self):
+        ticket = self.uic.txtTicket.text()
+        test = self.getCheckedItems(self.uic.layoutTestSuites)
+        time = [self.uic.txtTime.text(), self.uic.txtDate.text()]
+        reports = self.getCheckedItems(self.uic.layoutReports)
+        if (ticket == "") or (len(test) == 0) or (len(reports) == 0): return
         sendData = {
-                "ticket-id":self.uic.txtTicket.text(),
-                "build-version-name":self.uic.cBoxBuildVersions.currentText(),
-                "build-version-size":"0",
-                "test-suites":self.getCheckedItems(self.uic.layoutTestSuites),
-                "time":[self.uic.txtTime.text(), self.uic.txtDate.text()],
-                "reports":self.getCheckedItems(self.uic.layoutReports)
-            }
-        print(json.dumps(sendData, indent=2))
-        self.socket.send_function(sendData)
+            "ticket-id":ticket,
+            "build-version-name":self.uic.cBoxBuildVersions.currentText(),
+            "build-version-size":"0",
+            "test-suites":test,
+            "time":time,
+            "reports":reports
+        }
+        self.socket.clientRequest(sendData)
     
     def getCheckedItems(self, obj):
         checked = []
         for i in range(obj.count() - 1):
             checkbox = obj.itemAt(i).widget()
-            if checkbox.isChecked():
-                checked.append(checkbox.text())
+            if isinstance(checkbox, QCheckBox):
+                if checkbox.isChecked():
+                    checked.append(checkbox.text())
         return checked
 
     def clearCheckedItems(self, obj):
         for i in range(obj.count() - 1):
             checkbox = obj.itemAt(i).widget()
-            if checkbox.isChecked(): checkbox.setChecked(False)
+            if isinstance(checkbox, QCheckBox):
+                if checkbox.isChecked(): 
+                    checkbox.setChecked(False)
 
     def clearSelection(self):
         self.uic.txtTicket.clear()
@@ -108,51 +131,79 @@ class MainWindow(QMainWindow):
         self.clearCheckedItems(self.uic.layoutReports)
 
 
-class TCPSocket(QThread):
+class TCPSocketConnection(QThread):
     connectFinished = pyqtSignal(bool)
+    responseFinished = pyqtSignal(dict)
     def __init__(self):
-        super(TCPSocket, self).__init__()
+        super(TCPSocketConnection, self).__init__()
         self.HOST = ''
         self.Port = 0
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("TCPSocket thread Finished Init")
 
     def run(self):
         try:
-            self.s.connect((self.HOST, self.Port))
+            self.socket.connect((self.HOST, self.Port))
             print("Connection is established...")
             print("------------------------------------------")
             self.connected = True
+            self.receiver = TCPSocketReceiver(self.socket)
+            self.receiver.start()
+            self.receiver.response.connect(self.serverResponse)
         except Exception as e:
             self.connected = False
             print("Error:", e)
         self.connectFinished.emit(self.connected)
 
-    def disconnect(self):
-        if self.s:
-            self.s.close()
-            self.connected = False
-            print("Disconnected")
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def stop(self):
+        if self.receiver:
+            self.receiver.stop()
+
+        if self.socket:
+            self.socket.close()
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connected = False
+        print("Disconnected")
 
     def serverAddress(self, HOST, Port):
         self.HOST = HOST
         self.Port = Port
 
-    def send_function(self, sendData):
+    def clientRequest(self, sendData):
         sendJSON = json.dumps(sendData)
-        self.s.sendall((sendJSON + "\n").encode())
+        self.socket.sendall((sendJSON + "\n").encode())
 
-    def received_function(self):
-        recvJSON = ""
-        while not recvJSON.endswith("\n"):
-            recvJSON += self.s.recv(1).decode()
-        try:
-            recvData = json.loads(recvJSON.strip())
-        except json.JSONDecodeError as e:
-            print("Error: ", e)
-        return recvData
+    def serverResponse(self, recvJSON):
+        recvData = json.loads(recvJSON.strip())
+        self.responseFinished.emit(recvData)
 
+
+class TCPSocketReceiver(QThread):
+    response = pyqtSignal(str)
+    def __init__(self, socket):
+        super(TCPSocketReceiver, self).__init__()
+        self.socket = socket
+        self.running = True
+
+    def run(self):
+        while self.running:
+            try:
+                recvJSON = ""
+                while not recvJSON.endswith("\n"):
+                    recvJSON += self.socket.recv(1).decode()
+                if recvJSON:
+                    self.response.emit(recvJSON)
+                else:
+                    break
+            except Exception as e:
+                pass
+                break
+    
+    def stop(self):
+        self.running = False
+        if self.socket:
+            self.socket.shutdown(socket.SHUT_RDWR)
+        print("TCPSocketReceiver is close")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
