@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
     def runAct(self):
         ticket = self.uic.txtTicket.text()
         test = self.getCheckedItems(self.uic.layoutTestSuites)
-        time = [self.uic.txtTime.text(), self.uic.txtDate.text()]
+        schedule = [self.uic.txtTime.text(), self.uic.txtDate.text()]
         reports = self.getCheckedItems(self.uic.layoutReports)
         if (ticket == "") or (len(test) == 0) or (len(reports) == 0): return
         sendData = {
@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
             "build-version-name":self.uic.cBoxBuildVersions.currentText(),
             "build-version-size":"0",
             "test-suites":test,
-            "time":time,
+            "schedule":schedule,
             "reports":reports
         }
         self.socket.clientRequest(sendData)
