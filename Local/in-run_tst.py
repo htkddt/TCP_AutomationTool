@@ -34,6 +34,23 @@ os_system = platform.system()
 thisdir = os.getcwd()
 
 def run_test(build_version=""):
+    print("***Data details:")
+    print(f"ticket-id:{ticket}")
+    print(f"build-version-name:{buildName}")
+    print(f"test-suites:{listTestSuites}")
+    print(f"schedule:{schedule}")
+    print(f"listReports:{listReports}")
+
+    print("##############")
+    args = sys.argv
+    print(f"args: {sys.argv} --> len: {str(len(args))}")
+    print("##############")
+
+    for mail in listReports:
+        print(f"send_mail(to_addr={mail}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")")
+
+    return
+
     base_test_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
     if "\\" in base_test_directory:
         base_test_directory = string.replace(base_test_directory, "\\", "/")
@@ -211,5 +228,13 @@ if __name__ == "__main__":
         print(json.dumps(data, indent=2))
     except json.JSONDecodeError as e:
         print(e)
-    time.sleep(10)
+    ticket = data["ticket-id"]
+    buildName = data["build-version-name"]
+    listTestSuites = data["test-suites"]
+    schedule = data["schedule"]
+    timeValue = data["schedule"][0]
+    dateValue = data["schedule"][1]
+    listReports = data["reports"]
     # run_test(sys.argv[1])
+    run_test(ticket)
+    time.sleep(10)
