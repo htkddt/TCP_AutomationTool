@@ -3,12 +3,16 @@ import sys
 import socket
 import json
 
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QMainWindow, QApplication, QCheckBox
+from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QCheckBox, QPushButton, QToolButton, 
+                             QDialog, QCalendarWidget, QMenu, QSizePolicy, QVBoxLayout, QHBoxLayout, 
+                             QDial, QLabel, QTimeEdit)
 
 from applicationUI import MainWindowUI
 
-EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com"]
+EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
+          "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com"]
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -28,6 +32,8 @@ class MainWindow(QMainWindow):
         self.uic.btnConDis.clicked.connect(self.establishConnectAct)
         self.uic.btnOK.clicked.connect(self.runAct)
         self.uic.btnCancel.clicked.connect(self.clearSelection)
+        self.uic.txtDate.mousePressEvent = lambda event: self.showDateDialog()
+        self.uic.txtTime.mousePressEvent = lambda event: self.showTimeDialog()
 
     def establishConnectAct(self):
         if self.uic.btnConDis.text() == "Connect to server":
@@ -129,6 +135,61 @@ class MainWindow(QMainWindow):
         self.clearCheckedItems(self.uic.layoutTestSuites)
         self.clearCheckedItems(self.uic.layoutReports)
 
+    def showDateDialog(self):
+        dlg = DateDialog()  # Create default calendar and set that layout on dialog
+##----------------------------------------------------------------------------------------------------------
+##-------------------------Modify layout of month and year tool button--------------------------------------
+        btnMonth = dlg.calendar.findChild(QToolButton, "qt_calendar_monthbutton")
+        btnYear = dlg.calendar.findChild(QToolButton, "qt_calendar_yearbutton")
+        if btnMonth:
+            btnMonth.setMinimumWidth(300)
+            btnMonth.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        if btnYear:
+            btnYear.setMinimumWidth(300)
+            btnYear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            btnYear.setPopupMode(QToolButton.InstantPopup)
+            menu = QMenu()
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    border: 1px solid #ccc;
+                    font-size: 14px;
+                }
+                QMenu::item {
+                    padding: 5px 10px;
+                }
+                QMenu::item:selected {
+                    background-color: #2d8cf0;
+                    color: white;
+                }
+            """)
+
+        currentYear = QDate.currentDate().year()
+        for y in range(currentYear - 5, currentYear + 6):
+            action = menu.addAction(str(y))
+            action.triggered.connect(
+                lambda checked, year=y: 
+                    dlg.calendar.setSelectedDate(
+                        QDate(year, dlg.calendar.selectedDate().month(), dlg.calendar.selectedDate().day())
+                    )
+                )
+        btnYear.setMenu(menu)
+        dlg.setMinimumSize(625, 300)
+        dlg.dateSelected.connect(self.onDateSelected)
+        dlg.exec_()
+##----------------------------------------------------------------------------------------------------------
+##----------------------------------------------------------------------------------------------------------
+    def showTimeDialog(self):
+        dlg = TimeDialog()
+        dlg.timeSelected.connect(self.onTimeSelected)
+        dlg.exec_()
+
+    def onDateSelected(self, date):
+        self.uic.txtDate.setText(date.toString("dd/MM/yyyy"))
+
+    def onTimeSelected(self, time):
+        self.uic.txtTime.setText(time.toString("HH:mm:ss"))
+
 
 class TCPSocketConnection(QThread):
     connectFinished = pyqtSignal(bool)
@@ -203,6 +264,159 @@ class TCPSocketReceiver(QThread):
         if self.socket:
             self.socket.shutdown(socket.SHUT_RDWR)
         print("TCPSocketReceiver is close")
+
+
+class TimeDialog(QDialog):
+    timeSelected = pyqtSignal(QTime)
+    def __init__(self):
+        super().__init__()
+        font = QFont("Time New Roman", 13)
+        font.setBold(True)
+
+        self.hourLabel = QLabel()
+        self.hourLabel.setFont(font)
+        self.hourLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.minuteLabel = QLabel()
+        self.minuteLabel.setFont(font)
+        self.minuteLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.secondLabel = QLabel()
+        self.secondLabel.setFont(font)
+        self.secondLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.hourDial = QDial()
+        self.hourDial.setRange(0, 23)
+        self.hourDial.setNotchesVisible(True)
+        self.hourDial.setWrapping(True)
+
+        self.minuteDial = QDial()
+        self.minuteDial.setRange(0, 59)
+        self.minuteDial.setNotchesVisible(True)
+        self.minuteDial.setWrapping(True)
+
+        self.secondDial = QDial()
+        self.secondDial.setRange(0, 59)
+        self.secondDial.setNotchesVisible(True)
+        self.secondDial.setWrapping(True)
+
+        self.hourDial.valueChanged.connect(self.update_label)
+        self.minuteDial.valueChanged.connect(self.update_label)
+        self.secondDial.valueChanged.connect(self.update_label)
+
+        btnOK = QPushButton("OK")
+        btnOK.setFont(font)
+        btnOK.clicked.connect(self.emitTime)
+        btnCancel = QPushButton("Cancel")
+        btnCancel.setFont(font)
+        btnCancel.clicked.connect(self.reject)
+
+        dialLayout = QHBoxLayout()
+        dialLayout.addWidget(self.hourDial)
+        dialLayout.addWidget(self.minuteDial)
+        dialLayout.addWidget(self.secondDial)
+
+        labelLayout = QHBoxLayout()
+        labelLayout.addWidget(self.hourLabel, Qt.AlignmentFlag.AlignCenter)
+        labelLayout.addWidget(self.minuteLabel, Qt.AlignmentFlag.AlignCenter)
+        labelLayout.addWidget(self.secondLabel, Qt.AlignmentFlag.AlignCenter)
+
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(btnCancel)
+        buttonLayout.addWidget(btnOK)
+
+        layout = QVBoxLayout()
+        layout.addLayout(dialLayout)
+        layout.addSpacing(5)
+        layout.addLayout(labelLayout)
+        layout.addSpacing(5)
+        layout.addLayout(buttonLayout)
+        self.setLayout(layout)
+
+        now = QTime.currentTime()
+        self.hourDial.setValue(now.hour())
+        self.minuteDial.setValue(now.minute())
+        self.minuteDial.setValue(now.second())
+        self.update_label()
+
+    def update_label(self):
+        h = self.hourDial.value()
+        m = self.minuteDial.value()
+        s = self.secondDial.value()
+        self.hourLabel.setText(f"{h:02d}")
+        self.minuteLabel.setText(f"{m:02d}")
+        self.secondLabel.setText(f"{s:02d}")
+        self.timeEdit = QTime(h, m, s)
+    
+    def emitTime(self):
+        self.timeSelected.emit(self.timeEdit)
+        self.accept()
+
+
+class DateDialog(QDialog):
+    dateSelected = pyqtSignal(QDate)
+    def __init__(self):
+        super().__init__()
+        font = QFont("Time New Roman", 13)
+        font.setBold(True)
+
+        self.calendar = QCalendarWidget()
+        self.calendar.setGridVisible(True)
+        self.calendar.setSelectedDate(QDate.currentDate())
+        self.calendar.setStyleSheet("""
+            QCalendarWidget QAbstractItemView {
+                font-size: 16px;
+            }
+
+            QCalendarWidget QToolButton {
+                background-color: #ffffff;
+                color: #000000;
+                font-size: 16px;
+                icon-size: 24px;
+            }
+
+            QCalendarWidget QMenu {
+                background-color: #ffffff;
+                border: 1px solid #ccc;
+                font-size: 14px;
+            }
+
+            QCalendarWidget QMenu::item {
+                padding: 5px 10px;
+            }
+
+            QCalendarWidget QMenu::item:selected {
+                background-color: #2d8cf0;
+                color: white;
+            }
+        """)
+
+        btnPrev = self.calendar.findChild(QToolButton, "qt_calendar_prevmonth")
+        btnNext = self.calendar.findChild(QToolButton, "qt_calendar_nextmonth")
+        if btnPrev: btnPrev.hide()
+        if btnNext: btnNext.hide()
+
+        btnOK = QPushButton("OK")
+        btnOK.setFont(font)
+        btnOK.clicked.connect(self.emitDate)
+        btnCancel = QPushButton("Cancel")
+        btnCancel.setFont(font)
+        btnCancel.clicked.connect(self.reject)
+
+        layoutButton = QHBoxLayout()
+        layoutButton.addWidget(btnCancel)
+        layoutButton.addWidget(btnOK)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.calendar)
+        layout.addSpacing(5)
+        layout.addLayout(layoutButton)
+        self.setLayout(layout)
+
+    def emitDate(self):
+        selectetDate = self.calendar.selectedDate()
+        self.dateSelected.emit(selectetDate)
+        self.accept()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

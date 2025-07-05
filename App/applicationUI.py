@@ -1,7 +1,7 @@
 import sys
 import os
-from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QComboBox, QProgressBar, QScrollArea
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox
+from PyQt5.QtWidgets import QPushButton, QToolButton, QLabel, QLineEdit, QComboBox, QProgressBar, QScrollArea, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QDialog, QCalendarWidget, QMenu
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
@@ -111,8 +111,10 @@ class MainWindowUI(object):
         lbSchedule.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.txtTime = QLineEdit("hh:mm:ss", grProperties)
+        self.txtTime.setReadOnly(True)
         self.txtTime.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.txtDate = QLineEdit("dd/mm/yyyy", grProperties)
+        self.txtDate.setReadOnly(True)
         self.txtDate.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         scheduleLayout = QHBoxLayout()
@@ -187,7 +189,3 @@ class MainWindowUI(object):
 
         grProcessing.setLayout(mainLayout)
         self.mainLayout.addWidget(grProcessing)
-
-
-
-    
