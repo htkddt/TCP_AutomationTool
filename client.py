@@ -96,6 +96,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     elif recvData["argv"] == "status":
                         if recvData["value"] == "running":
                             print(f"value:\t{value}")
+                            print("------------------------------------------")
+                            continue
                         elif recvData["value"] == "finished":
                             print(f"value:\t{value}")
                 print("------------------------------------------")
