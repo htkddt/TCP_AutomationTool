@@ -2,7 +2,6 @@ import os
 import sys
 import socket
 import json
-import threading
 
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QApplication, QCheckBox

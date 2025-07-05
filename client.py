@@ -3,7 +3,10 @@ import os
 import socket
 import json
 
-# Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 19|00|00|03|07|2025 mail1|mail2|mail3
+# Release: 
+#   - Syntax:   pyinstaller --onefile --noconsole --name {file_name} --icon={icon_name}.ico --distpath {"folder_path"} {script_name.py}
+#   - Ex:       pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath "D:\A_TerraLogic_Project\TerraTool\TCPTool" applicationCore.py
+# Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 19|00|00 03|07|2025 mail1|mail2|mail3
 
 if len(sys.argv) < 2:
     print("Usage: python client.py [local|remote]")
