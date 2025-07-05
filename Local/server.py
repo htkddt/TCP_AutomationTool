@@ -7,8 +7,10 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
+#buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
+#testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
+buildDir = f"D:\\A_TerraLogic\\TTSApplication"
+testDir = f"D:\\A_TerraLogic\\"
 
 HOST = '127.0.0.1'
 PORT = 9999
@@ -34,7 +36,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if len(recvData) == 2:
                     if recvData["argv"] == "server":
                         if recvData["value"] == "init":
-                            # print("Collect available data for client")
+                            print("Collect available data for client")
                             files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                        if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                             folders = [name for name in os.listdir(testDir) 
@@ -48,7 +50,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             }
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
-                            # print("------------------------------------------")
+                            print("------------------------------------------")
                             continue
                         elif recvData["value"] == "close" or recvData["value"] == "stop":
                             sendData = {
@@ -64,7 +66,21 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             if recvData["value"] == "stop":
                                 print(f"Server listenning [{HOST}:{PORT}]...")
                                 break
+                        else:
+                            sendData = {
+                                "argv":"client",
+                                "value":"error"
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                            continue
                     else:
+                        sendData = {
+                            "argv":"client",
+                            "value":"error"
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
                         print("ERROR: Incorrect request from client\nTo disconnect type: server stop or client stop")
                         print("------------------------------------------")
                         continue
