@@ -83,13 +83,13 @@ while True:
                             f.write(bin)
                             size += len(bin)
                 testSuites = recvData["test-suites"]
-                time = recvData["time"]
+                schedule = recvData["schedule"]
                 reports = recvData["reports"]
                 cmdPARA = {
                     "ticket-id":ticket,
                     "build-version-name":buildName,
                     "test-suites":testSuites,
-                    "time":time,
+                    "schedule":schedule,
                     "reports":reports
                 }
                 cmdJSON = json.dumps(cmdPARA)
