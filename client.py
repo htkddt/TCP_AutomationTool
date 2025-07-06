@@ -6,15 +6,21 @@ import json
 # Release: 
 #   - Syntax:   pyinstaller --onefile --noconsole --name {file_name} --icon={icon_name}.ico --distpath {"folder_path"} {script_name.py}
 #   - Ex:       pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath "D:\A_TerraLogic_Project\TerraTool\TCPTool" applicationCore.py
-# Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 19|00|00 03|07|2025 mail1|mail2|mail3
+# Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 16:47 03/07/2025 sangx.phan@intel.com|thex.do@intel.com|tuanx.nguyen@intel.com
 
 if len(sys.argv) < 2:
     print("Usage: python client.py [local|remote]")
     sys.exit(1)
 
-if (sys.argv[1] == "local"): HOST = '127.0.0.1'
-elif (sys.argv[1] == "remote"): HOST = '10.148.98.226'
-PORT = 9999
+if (sys.argv[1] == "local"): 
+    HOST = '127.0.0.1'
+    PORT = 9999
+elif (sys.argv[1] == "network"):
+    HOST = '127.0.0.1'
+    PORT = 8888
+elif (sys.argv[1] == "remote"): 
+    HOST = '10.148.98.226'
+    PORT = 9999
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
@@ -42,8 +48,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 "build-version-name":msgSplit[1],
                 "build-version-size":msgSplit[2],
                 "test-suites":msgSplit[3].split("|"),
-                "time":msgSplit[4].split("|"),
-                "reports":msgSplit[5].split("|")
+                "schedule":[msgSplit[4], msgSplit[5]],
+                "reports":msgSplit[6].split("|")
             }
         sendJSON = json.dumps(sendData)
 #--------------------------------------------------------------------------------
@@ -100,6 +106,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             continue
                         elif recvData["value"] == "finished":
                             print(f"value:\t{value}")
+                    elif recvData["argv"] == "processing":
+                        print(f"value:\t{value}")
+                        print("------------------------------------------")
+                        continue
                 print("------------------------------------------")
             break
         if not connected: break
