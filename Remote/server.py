@@ -64,7 +64,21 @@ while True:
                         if recvData["value"] == "stop":
                             print "Server listenning on [{}:{}]...".format(HOST, PORT)
                             break
+                    else:
+                            sendData = {
+                                "argv":"client",
+                                "value":"error"
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                            continue
                 else:
+                    sendData = {
+                        "argv":"client",
+                        "value":"error"
+                    }
+                    sendJSON = json.dumps(sendData)
+                    conn.sendall((sendJSON + "\n").encode())
                     print "ERROR: Incorrect request from client\nTo disconnect type: server stop or client stop"
                     print "------------------------------------------"
                     continue

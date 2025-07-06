@@ -7,8 +7,6 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-#buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-#testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
 buildDir = f"D:\\A_TerraLogic\\TTSApplication"
 testDir = f"D:\\A_TerraLogic\\"
 

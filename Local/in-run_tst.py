@@ -20,12 +20,6 @@ import json
 testsuite_directory = []
 sender_on_windows = 'ns_gui_regression@intel.com'
 
-cc_mail0 = ""
-to_addr0 = "tuanx.nguyen@intel.com"
-cc_mail1 = ""
-to_addr1 = "kiet.huynh@terralogic.com"
-cc_mail2 = ""
-to_addr2 = "sangx.phan@intel.com"
 recipient=""
 
 os.environ["DISPLAY"] = ":1.0"
@@ -35,19 +29,14 @@ thisdir = os.getcwd()
 
 def run_test(build_version=""):
     print("***Data details:")
-    print(f"ticket-id:{ticket}")
-    print(f"build-version-name:{buildName}")
-    print(f"test-suites:{listTestSuites}")
-    print(f"schedule:{schedule}")
-    print(f"listReports:{listReports}")
-
-    print("##############")
-    args = sys.argv
-    print(f"args: {sys.argv} --> len: {str(len(args))}")
-    print("##############")
+    print(f"- ticket-id:{ticket}")
+    print(f"- build-version-name:{buildName}")
+    print(f"- test-suites:{listTestSuites}")
+    print(f"- schedule:{schedule}")
+    print(f"- listReports:{listReports}")
 
     for mail in listReports:
-        print(f"send_mail(to_addr={mail}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")")
+        print(f"\t+ send_mail(to_addr={mail}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")")
 
     return
 
@@ -138,7 +127,9 @@ def run_test(build_version=""):
     content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
     content +="\n"
     
-    send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
+    for mail in listReports:
+        send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
+    # send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
     # send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
     
     shutil.rmtree("html_report")
