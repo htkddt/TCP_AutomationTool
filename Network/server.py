@@ -11,11 +11,13 @@ os_system = platform.system()
 # - Python: C:\\Program Files\\Python313\\python.exe
 # - Windows Batch File: C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\run.bat
 
-jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
-buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
-#buildDir = f"D:\\A_TerraLogic\\TTSApplication"
-#testDir = f"D:\\A_TerraLogic\\"
+#jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
+jsonDir = f"D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network"
+
+#buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
+#testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
+buildDir = f"D:\\A_TerraLogic\\TTSApplication"
+testDir = f"D:\\A_TerraLogic\\"
 
 HOST = '127.0.0.1'
 PORT = 8888
@@ -109,8 +111,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     timeValue = schedule[0]
                     dateValue = schedule[1]
                     reports = recvData["reports"]
-                    # isExistingTask = os.system(f'schtasks /query /tn "{ticket}"')
-                    # if isExistingTask == 0: os.system(f'schtasks /delete /tn "{ticket}" /f')
+                    isExistingTask = os.system(f'schtasks /query /tn "Task_{ticket}" >nul 2>&1')
+                    if isExistingTask == 0: os.system(f'schtasks /delete /tn "Task_{ticket}" /f')
                     cmdPARA = {
                         "ticket-id":ticket,
                         "build-version-name":buildName,
@@ -118,13 +120,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         "schedule":schedule,
                         "reports":reports
                     }
-                    jsonFile = os.path.join(jsonDir, "input.json")
+                    jsonFile = os.path.join(jsonDir, f"input_{ticket}.json")
                     with open(jsonFile, 'w') as f:
                         json.dump(cmdPARA, f)
                     # cmdJSON = json.dumps(cmdPARA)
                     # cmd = f"python in-run_tst.py bdd_test"
-                    cmd = f"schtasks /create /tn \"{ticket}\" /tr \"C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\run.bat\" /sc once /st {timeValue}"
-                    # print(f"CMD:{cmd}")
+                    cmd = f"schtasks /create /tn \"Task_{ticket}\" /tr \"D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network\\run.bat {ticket}\" /sc once /st {timeValue} /sd {dateValue}"
                     sendData = {
                         "argv":"status",
                         "value":"running"

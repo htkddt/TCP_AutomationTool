@@ -198,8 +198,24 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print("Running in-run_tst.py...")
-    print(f"sys.argv[1] = {sys.argv[1]}")
+    timeCurrently = datetime.now().strftime("%H:%M:%S")
+    dateCurrently = datetime.today().strftime("%d/%m/%Y")
+    print(f"[Currently: {timeCurrently} - {dateCurrently}] Running in-run_tst.py...")
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    jsonFile = f"D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network\\input_{sys.argv[1]}.json"
+    with open(jsonFile, 'r') as f:
+        data = json.load(f)
+    print("***Data JSON:")
+    print(json.dumps(data, indent=2))
+    ticket = data["ticket-id"]
+    buildName = data["build-version-name"]
+    listTestSuites = data["test-suites"]
+    schedule = data["schedule"]
+    timeValue = data["schedule"][0]
+    dateValue = data["schedule"][1]
+    listReports = data["reports"]
+    #run_test(ticket)
     time.sleep(5)
     print("Processing in-run_tst.py with schtasks command...")
     time.sleep(5)
@@ -207,7 +223,7 @@ if __name__ == "__main__":
     time.sleep(5)
     print("Processing in-run_tst.py with schtasks command...")
     time.sleep(5)
-    os.system('schtasks /delete /tn "Test" /f')
+    os.system(f'del /f /q "D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network\\input_{sys.argv[1]}.json"')
     time.sleep(5)
     print("Finished.")
     print("Run automation successful.")

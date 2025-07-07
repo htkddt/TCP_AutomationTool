@@ -1,2 +1,2 @@
 @echo off
-start cmd /c "python C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\in-run_tst.py bdd_test"
+start cmd /k "python D:\A_TerraLogic\TerraTool\TCPTool\Network\in-run_tst.py %1 bdd_test"
