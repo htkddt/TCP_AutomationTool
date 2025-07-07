@@ -129,8 +129,6 @@ def run_test(build_version=""):
     
     for mail in listReports:
         send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
-    # send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
-    # send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
     
     shutil.rmtree("html_report")
 
@@ -213,12 +211,14 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    try:
-        jsonFile = sys.stdin.read()
-        data = json.loads(jsonFile.strip())
-        print(json.dumps(data, indent=2))
-    except json.JSONDecodeError as e:
-        print(e)
+    print("Running in-run_tst.py...")
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    jsonFile = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\input.json"
+    with open(jsonFile, 'r') as f:
+        data = json.load(f)
+    print("***Data JSON:")
+    print(json.dumps(data, indent=2))
     ticket = data["ticket-id"]
     buildName = data["build-version-name"]
     listTestSuites = data["test-suites"]
@@ -226,6 +226,16 @@ if __name__ == "__main__":
     timeValue = data["schedule"][0]
     dateValue = data["schedule"][1]
     listReports = data["reports"]
-    # run_test(sys.argv[1])
     run_test(ticket)
-    time.sleep(10)
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    os.system(f'schtasks /delete /tn "{ticket}" /f')
+    time.sleep(5)
+    print("Finished.")
+    print("Run automation successful.")
+    time.sleep(3)

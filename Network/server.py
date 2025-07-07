@@ -3,15 +3,19 @@ import socket
 import subprocess
 import platform
 import json
-import time
 
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-#buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-#testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
-buildDir = f"D:\\A_TerraLogic\\TTSApplication"
-testDir = f"D:\\A_TerraLogic\\"
+# Note:
+# - Python: C:\\Program Files\\Python313\\python.exe
+# - Windows Batch File: C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\run.bat
+
+jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
+buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
+testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
+#buildDir = f"D:\\A_TerraLogic\\TTSApplication"
+#testDir = f"D:\\A_TerraLogic\\"
 
 HOST = '127.0.0.1'
 PORT = 8888
@@ -19,7 +23,7 @@ PORT = 8888
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HOST, PORT))
-    s.listen(5)
+    s.listen(1)
     print(f"Server listenning [{HOST}:{PORT}]...")
     while True:
         conn, addr = s.accept()
@@ -105,6 +109,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     timeValue = schedule[0]
                     dateValue = schedule[1]
                     reports = recvData["reports"]
+                    # isExistingTask = os.system(f'schtasks /query /tn "{ticket}"')
+                    # if isExistingTask == 0: os.system(f'schtasks /delete /tn "{ticket}" /f')
                     cmdPARA = {
                         "ticket-id":ticket,
                         "build-version-name":buildName,
@@ -112,61 +118,28 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         "schedule":schedule,
                         "reports":reports
                     }
-                    cmdJSON = json.dumps(cmdPARA)
-                    #cmd = f"python in-run_tst.py bdd_test"
-                    cmd = fr'''schtasks /create /tn "{ticket}" /tr "run.bat" /sc once /st {timeValue}'''
-                    #cmd = fr'''schtasks /create /tn "RunSquishTest" /tr "D:\A_TerraLogic\TerraTool\TCPTool\Local\run.bat" /sc once /st {timeValue}'''
-                    print(cmd)
+                    jsonFile = os.path.join(jsonDir, "input.json")
+                    with open(jsonFile, 'w') as f:
+                        json.dump(cmdPARA, f)
+                    # cmdJSON = json.dumps(cmdPARA)
+                    # cmd = f"python in-run_tst.py bdd_test"
+                    cmd = f"schtasks /create /tn \"{ticket}\" /tr \"C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\run.bat\" /sc once /st {timeValue}"
+                    # print(f"CMD:{cmd}")
                     sendData = {
                         "argv":"status",
                         "value":"running"
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                    print("Running in-run_tst.py...")
                     try:
                         if os_system == platforms["Linux"]:
-                            process = subprocess.run(cmd.split(), input=cmdJSON.encode())
+                            # process = subprocess.run(cmd.split(), input=cmdJSON.encode())
+                            process = subprocess.call(cmd)
                         else:
-                            process = subprocess.run(cmd.split(), shell=True, input=cmdJSON.encode())
+                            # process = subprocess.run(cmd, shell=True, input=cmdJSON.encode())
+                            process = subprocess.call(cmd, shell=True)
                     except Exception as error:
                         print("Error: " + error)
-                    # totalTestSuites = 500
-                    # currentTestSuite = 0
-                    # failedTestSuites = 0
-                    # startTime = time.time()
-                    # while currentTestSuite < totalTestSuites:
-                    #     startTestTime = time.time()
-                    #     try:
-                    #         if os_system == platforms["Linux"]:
-                    #             process = subprocess.run(cmd.split(), input=cmdJSON.encode())
-                    #         else:
-                    #             process = subprocess.run(cmd.split(), shell=True, input=cmdJSON.encode())
-                    #     except Exception as error:
-                    #         print("Error: " + error)
-                    #         failedTestSuites += 1
-                    #     print("=================================================================")
-                    #     print("=====================Start Temporary Reports=====================")
-                    #     print("=================================================================")
-                    #     print(f"- Total Test Cases: {totalTestSuites}")
-                    #     print(f"- Current Test Case: {currentTestSuite}")
-                    #     print(f"- Total Test Time: {str(time.time() - startTestTime)}")
-                    #     print(f"- Failed Test cases: {failedTestSuites}")
-                    #     print("=================================================================")
-                    #     print("======================End Temporary Reports======================")
-                    #     print("=================================================================")
-                    #     currentTestSuite += 1
-                    #     if conn:
-                    #         sendData = {
-                    #             "argv":"processing",
-                    #             "value":f"{currentTestSuite}"
-                    #         }
-                    #         sendJSON = json.dumps(sendData)
-                    #         conn.sendall((sendJSON + "\n").encode())
-                    #     else:
-                    #         print("Error: Server not responding. Test case failed by Networking")
-                    #         failedTestSuites += 1
-                    #     time.sleep(5)
                     if conn:
                         sendData = {
                             "argv":"status",
@@ -174,10 +147,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                    else:
-                        print("Error: Server not responding. Test case failed by Networking")
-                    print("Finished.")
-                    # print(f"Total Process Time: {str(time.time() - startTime)}")
-                    print("Run automation successful.")
                     print("------------------------------------------")
         if not connected: break

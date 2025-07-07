@@ -28,18 +28,6 @@ os_system = platform.system()
 thisdir = os.getcwd()
 
 def run_test(build_version=""):
-    print("***Data details:")
-    print(f"- ticket-id:{ticket}")
-    print(f"- build-version-name:{buildName}")
-    print(f"- test-suites:{listTestSuites}")
-    print(f"- schedule:{schedule}")
-    print(f"- listReports:{listReports}")
-
-    for mail in listReports:
-        print(f"\t+ send_mail(to_addr={mail}, cc_mail="", subject=subject, content=content, file_location="")")
-
-    return
-
     base_test_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
     if "\\" in base_test_directory:
         base_test_directory = string.replace(base_test_directory, "\\", "/")
@@ -48,92 +36,90 @@ def run_test(build_version=""):
     total_tscase = 0
     tscase_errors = []
     
-    for i in range(2, len(args)):
-        if os_system == platforms["Linux"]:
-            bash_command = "find " + base_test_directory + " -name *" + args[i] + "*"
-            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            out_arrs = output.strip().split("\n")
-        else:
-            os.chdir(base_test_directory)
-            bash_command = "dir *" + args[i] + "* /b/s"
-            process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            temp = output.strip().split("\r\n")
-            out_arrs = []
-            for i in temp:
-                if "\\" in i:
-                    i = string.replace(i, "\\", "/")
-                out_arrs.append(i)
+    # for i in range(2, len(args)):
+    #     if os_system == platforms["Linux"]:
+    #         bash_command = "find " + base_test_directory + " -name *" + args[i] + "*"
+    #         process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    #         output = process.communicate()[0]
+    #         out_arrs = output.strip().split("\n")
+    #     else:
+    #         os.chdir(base_test_directory)
+    #         bash_command = "dir *" + args[i] + "* /b/s"
+    #         process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
+    #         output = process.communicate()[0]
+    #         temp = output.strip().split("\r\n")
+    #         out_arrs = []
+    #         for i in temp:
+    #             if "\\" in i:
+    #                 i = string.replace(i, "\\", "/")
+    #             out_arrs.append(i)
 
-        existing = {}
-        for i in out_arrs:
-            dir_abspath = os.path.abspath(i)
-            if "\\" in dir_abspath:
-                dir_abspath = string.replace(dir_abspath, "\\", "/")
-            pattern = base_test_directory + "([^/]+)/.+"
-            rs = re.findall(pattern, dir_abspath)
-            if len(rs) == 0:
-                continue
-            tssuite_dir = base_test_directory + re.findall(pattern, dir_abspath)[0] + "/"
-            if tssuite_dir in existing:
-                item = existing[tssuite_dir]
-            else:
-                testsuite_directory.append(tssuite_dir)
-                existing[tssuite_dir] = len(out_arrs) - 1
+    #     existing = {}
+    #     for i in out_arrs:
+    #         dir_abspath = os.path.abspath(i)
+    #         if "\\" in dir_abspath:
+    #             dir_abspath = string.replace(dir_abspath, "\\", "/")
+    #         pattern = base_test_directory + "([^/]+)/.+"
+    #         rs = re.findall(pattern, dir_abspath)
+    #         if len(rs) == 0:
+    #             continue
+    #         tssuite_dir = base_test_directory + re.findall(pattern, dir_abspath)[0] + "/"
+    #         if tssuite_dir in existing:
+    #             item = existing[tssuite_dir]
+    #         else:
+    #             testsuite_directory.append(tssuite_dir)
+    #             existing[tssuite_dir] = len(out_arrs) - 1
 
-    if len(testsuite_directory) == 0:
-        return 
+    # if len(testsuite_directory) == 0:
+    #     return 
     
-    start_squish_server()
-    testsuite_directory.sort()
-    start_time = time.time()
+    # start_squish_server()
+    # testsuite_directory.sort()
+    # start_time = time.time()
 
-    for d in (testsuite_directory):
-        source_file ="C:\\Users\\maitanx\\backup_ini\\NocStudio.ini"
-        destination_folder ="C:\\Users\\maitanx\\.NetSpeed\\"
-        shutil.copy2(source_file, destination_folder)
-        print ("in folder + " + d + "\n")
-        total_tsuite += 1
-        bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,html_report"
-        print ("begin execute testsuite")
-        if os_system == platforms["Linux"]:
-            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-            print ("processing data")
-        else:            
-            process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
-            print ("processing data")
-        process.communicate()[0]
-        time.sleep(3)
+    # for d in (testsuite_directory):
+    #     source_file ="C:\\Users\\maitanx\\backup_ini\\NocStudio.ini"
+    #     destination_folder ="C:\\Users\\maitanx\\.NetSpeed\\"
+    #     shutil.copy2(source_file, destination_folder)
+    #     print ("in folder + " + d + "\n")
+    #     total_tsuite += 1
+    #     bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,html_report"
+    #     print ("begin execute testsuite")
+    #     if os_system == platforms["Linux"]:
+    #         process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    #         print ("processing data")
+    #     else:            
+    #         process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
+    #         print ("processing data")
+    #     process.communicate()[0]
+    #     time.sleep(3)
           
-    temp = (time.time() - start_time) / 3600
-    elapsed_time = float("{0:.2f}".format(temp))
+    # temp = (time.time() - start_time) / 3600
+    # elapsed_time = float("{0:.2f}".format(temp))
  
-    current_date = datetime.now()
-    temp = str(current_date).split()
-    current_day = string.replace(temp[0], "-", "_")
-    current_time = string.replace(temp[1].split(".")[0], ":", "_")
-    total_tscase = getTotalTestcase()
-    tscase_errors = getTestcaseErrors()
+    # current_date = datetime.now()
+    # temp = str(current_date).split()
+    # current_day = string.replace(temp[0], "-", "_")
+    # current_time = string.replace(temp[1].split(".")[0], ":", "_")
+    # total_tscase = getTotalTestcase()
+    # tscase_errors = getTestcaseErrors()
 
-    subject = "GUI Automation Test Report for " + str(build_version)
-    content = ""
-    content += "This is the automation test report for NocStudio (Date: " + current_day + " - Time: " + current_time + "). \n"
-    content +="\n"
-    content += "- Total Test cases: " + str(total_tscase) + "\n"
-    content += "- Total Time: " + str(elapsed_time) + "(h)\n"
-    content += "- Failed Test cases: " + str(len(tscase_errors)) + "\n"
-    content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
-    content +="\n"
-    
-    for mail in listReports:
-        send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
-    # send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
-    # send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
-    
-    shutil.rmtree("html_report")
+    # subject = "GUI Automation Test Report for " + str(build_version)
+    # content = ""
+    # content += "This is the automation test report for NocStudio (Date: " + current_day + " - Time: " + current_time + "). \n"
+    # content +="\n"
+    # content += "- Total Test cases: " + str(total_tscase) + "\n"
+    # content += "- Total Time: " + str(elapsed_time) + "(h)\n"
+    # content += "- Failed Test cases: " + str(len(tscase_errors)) + "\n"
+    # content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
+    # content +="\n"
 
-    stop_squish_server()
+    # # send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
+    # # send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
+    
+    # shutil.rmtree("html_report")
+
+    # stop_squish_server()
 
 def start_squish_server():
     bash_command = "squishserver --port 4322"
@@ -212,20 +198,17 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print("***Data JSON:")
-    try:
-        jsonFile = sys.stdin.read()
-        data = json.loads(jsonFile.strip())
-        print(json.dumps(data, indent=2))
-    except json.JSONDecodeError as e:
-        print(e)
-    ticket = data["ticket-id"]
-    buildName = data["build-version-name"]
-    listTestSuites = data["test-suites"]
-    schedule = data["schedule"]
-    timeValue = data["schedule"][0]
-    dateValue = data["schedule"][1]
-    listReports = data["reports"]
-    # run_test(sys.argv[1])
-    run_test(ticket)
+    print("Running in-run_tst.py...")
+    print(f"sys.argv[1] = {sys.argv[1]}")
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    print("Processing in-run_tst.py with schtasks command...")
+    time.sleep(5)
+    os.system('schtasks /delete /tn "Test" /f')
+    time.sleep(5)
+    print("Finished.")
+    print("Run automation successful.")
     time.sleep(3)

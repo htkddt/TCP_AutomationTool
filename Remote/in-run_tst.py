@@ -20,12 +20,6 @@ import json
 testsuite_directory = []
 sender_on_windows = 'ns_gui_regression@intel.com'
 
-cc_mail0 = ""
-to_addr0 = "tuanx.nguyen@intel.com"
-cc_mail1 = ""
-to_addr1 = "kiet.huynh@terralogic.com"
-cc_mail2 = ""
-to_addr2 = "sangx.phan@intel.com"
 recipient=""
 
 os.environ["DISPLAY"] = ":1.0"
@@ -35,19 +29,14 @@ thisdir = os.getcwd()
 
 def run_test(build_version=""):
     print "***Data details:"
-    print "ticket-id:{}".format(ticket)
-    print "build-version-name:{}".format(buildName)
-    print "test-suites:{}".format(listTestSuites)
-    print "schedule:{}".format(schedule)
-    print "listReports:{}".format(listReports)
-
-    print "##############"
-    args = sys.argv
-    print "args: {} --> len: {}".format(sys.argv, str(len(args)))
-    print "##############"
+    print "- ticket-id:{}".format(ticket)
+    print "- build-version-name:{}".format(buildName)
+    print "- test-suites:{}".format(listTestSuites)
+    print "- schedule:{}".format(schedule)
+    print "- listReports:{}".format(listReports)
 
     for mail in listReports:
-        print "send_mail(to_addr={}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")".format(mail)
+        print "\t+ send_mail(to_addr={}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")".format(mail)
 
     return
 
@@ -138,9 +127,9 @@ def run_test(build_version=""):
     content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
     content +="\n";
     
-    send_mail(to_addr=to_addr0, cc_mail=cc_mail0, subject=subject, content=content, file_location="")
-    send_mail(to_addr=to_addr1, cc_mail=cc_mail1, subject=subject, content=content, file_location="")
-    
+    for mail in listReports:
+        send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
+
     shutil.rmtree("html_report")
 
     stop_squish_server()
@@ -222,12 +211,14 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    try:
-        jsonFile = sys.stdin.read()
-        data = json.loads(jsonFile.strip())
-        print "{}".format(json.dumps(data, indent=2))
-    except json.JSONDecodeError, e:
-        print "{}".format(e)
+    print "Running in-run_tst.py..."
+    print "Processing in-run_tst.py with schtasks command..."
+    time.sleep(5)
+    jsonFile = r"C:\\TanMai\\TuanNguyen\\input.json"
+    with open(jsonFile, 'r') as f:
+        data = json.load(f)
+    print "***Data JSON:"
+    print "{}".format(json.dumps(data, indent=2))
     ticket = data["ticket-id"]
     buildName = data["build-version-name"]
     listTestSuites = data["test-suites"]
@@ -235,6 +226,16 @@ if __name__ == "__main__":
     timeValue = data["schedule"][0]
     dateValue = data["schedule"][1]
     listReports = data["reports"]
-    # run_test(sys.argv[1])
     run_test(ticket)
+    time.sleep(5)
+    print "Processing in-run_tst.py with schtasks command..."
+    time.sleep(5)
+    print "Processing in-run_tst.py with schtasks command..."
+    time.sleep(5)
+    print "Processing in-run_tst.py with schtasks command..."
+    time.sleep(5)
+    os.system('schtasks /delete /tn "{}" /f'.format(ticket))
+    time.sleep(5)
+    print "Finished."
+    print "Run automation successful."
     time.sleep(10)

@@ -7,15 +7,19 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-buildDir = f"D:\\A_TerraLogic\\TTSApplication"
-testDir = f"D:\\A_TerraLogic\\"
+jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
+buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
+testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
+#buildDir = f"D:\\A_TerraLogic\\TTSApplication"
+#testDir = f"D:\\A_TerraLogic\\"
 
 HOST = '127.0.0.1'
 PORT = 9999
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HOST, PORT))
-    s.listen(2)
+    s.listen(1)
     print(f"Server listenning [{HOST}:{PORT}]...")
     while True:
         conn, addr = s.accept()
@@ -98,7 +102,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                                 size += len(bin)
                     testSuites = recvData["test-suites"]
                     schedule = recvData["schedule"]
+                    timeValue = schedule[0]
+                    dateValue = schedule[1]
                     reports = recvData["reports"]
+                    # isExistingTask = os.system(f'schtasks /query /tn "{ticket}" >nul')
+                    # if isExistingTask == 0: os.system(f'schtasks /delete /tn "{ticket}" /f')
                     cmdPARA = {
                         "ticket-id":ticket,
                         "build-version-name":buildName,
@@ -106,20 +114,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         "schedule":schedule,
                         "reports":reports
                     }
-                    cmdJSON = json.dumps(cmdPARA)
-                    cmd = f"python in-run_tst.py {ticket} bdd_test"
+                    jsonFile = os.path.join(jsonDir, "input.json")
+                    with open(jsonFile, 'w') as f:
+                        json.dump(cmdPARA, f)
+                    # cmdJSON = json.dumps(cmdPARA)
+                    # cmd = f"python in-run_tst.py {ticket} bdd_test"
+                    cmd = f"schtasks /create /tn \"{ticket}\" /tr \"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\run.bat\" /sc once /st {timeValue}"
+                    # print(f"CMD:{cmd}")
                     sendData = {
                         "argv":"status",
                         "value":"running"
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                    print("Running in-run_tst.py...")
                     try:
                         if os_system == platforms["Linux"]:
-                            process = subprocess.run(cmd.split(), input=cmdJSON.encode())
+                            # process = subprocess.run(cmd.split(), input=cmdJSON.encode())
+                            process = subprocess.call(cmd)
                         else:
-                            process = subprocess.run(cmd.split(), shell=True, input=cmdJSON.encode())
+                            # process = subprocess.run(cmd, shell=True, input=cmdJSON.encode())
+                            process = subprocess.call(cmd, shell=True)
                     except Exception as error:
                         print("Error: " + error)
                     if conn:
@@ -129,7 +143,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                    print("Finished.")
-                    print("Run automation successful.")
                     print("------------------------------------------")
         if not connected: break

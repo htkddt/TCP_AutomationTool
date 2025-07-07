@@ -9,7 +9,7 @@ import json
 # Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 16:47 03/07/2025 sangx.phan@intel.com|thex.do@intel.com|tuanx.nguyen@intel.com
 
 if len(sys.argv) < 2:
-    print("Usage: python client.py [local|remote]")
+    print("Usage: python client.py [local|remote|network]")
     sys.exit(1)
 
 if (sys.argv[1] == "local"): 

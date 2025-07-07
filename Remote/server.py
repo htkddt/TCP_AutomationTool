@@ -7,6 +7,7 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
+jsonDir = r"C:\\TanMai\\TuanNguyen\\"
 buildDir = r"C:\\TanMai\\NocStudio\\"
 testDir = r"C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\"
 
@@ -14,6 +15,7 @@ HOST = '0.0.0.0'
 PORT = 9999
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind((HOST, PORT))
 s.listen(1)
 print "Server listenning on [{}:{}]...".format(HOST, PORT)
@@ -34,7 +36,7 @@ while True:
             if len(recvData) == 2:
                 if recvData["argv"] == "server":
                     if recvData["value"] == "init":
-                        # print "Collect available data for client"
+                        print "Collect available data for client"
                         files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                     if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                         folders = [name for name in os.listdir(testDir) 
@@ -48,7 +50,7 @@ while True:
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                        # print "------------------------------------------"
+                        print "------------------------------------------"
                         continue
                     elif recvData["value"] == "close" or recvData["value"] == "stop":
                         sendData = {
@@ -98,7 +100,11 @@ while True:
                             size += len(bin)
                 testSuites = recvData["test-suites"]
                 schedule = recvData["schedule"]
+                timeValue = schedule[0]
+                dateValue = schedule[1]
                 reports = recvData["reports"]
+                # isExistingTask = os.system('schtasks /query /tn "{}" >nul'.format(ticket))
+                # if isExistingTask == 0: os.system('schtasks /delete /tn "{}" /f'.format(ticket))
                 cmdPARA = {
                     "ticket-id":ticket,
                     "build-version-name":buildName,
@@ -106,21 +112,27 @@ while True:
                     "schedule":schedule,
                     "reports":reports
                 }
-                cmdJSON = json.dumps(cmdPARA)
-                cmd = "python2 in-run_tst.py " + ticket + " bdd_test"
+                jsonFile = os.path.join(jsonDir, "input.json")
+                with open(jsonFile, 'w') as f:
+                    json.dump(cmdPARA, f)
+                # cmdJSON = json.dumps(cmdPARA)
+                # cmd = "python2 in-run_tst.py " + ticket + " bdd_test"
+                cmd = "schtasks /create /tn \"{}\" /tr \"C:\\TanMai\\TuanNguyen\\run.bat\" /sc once /st {}".format(ticket, timeValue)
+                # print(f"CMD:{cmd}")
                 sendData = {
                     "argv":"status",
                     "value":"running"
                 }
                 sendJSON = json.dumps(sendData)
                 conn.sendall((sendJSON + "\n").encode())
-                print "Running in-run_tst.py..."
                 try:
                     if os_system == platforms["Linux"]:    
-                        process = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                        # process = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                        process = subprocess.call(cmd)
                     else:
-                        process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    process.communicate(input=cmdJSON.encode())
+                        # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                        process = subprocess.call(cmd)
+                    # process.communicate(input=cmdJSON.encode())
                 except Exception, error:
                     print "Error: " + str(error)
                 if conn:
@@ -130,7 +142,5 @@ while True:
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                print "Finished."
-                print "Run automation successful."
                 print "-------------------------------"
     if not connected: break
