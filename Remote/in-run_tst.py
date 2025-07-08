@@ -28,15 +28,55 @@ os_system = platform.system()
 thisdir = os.getcwd()
 
 def run_test(build_version=""):
+    print "------------------------------------------"
     print "***Data details:"
     print "- ticket-id:{}".format(ticket)
     print "- build-version-name:{}".format(buildName)
     print "- test-suites:{}".format(listTestSuites)
     print "- schedule:{}".format(schedule)
     print "- listReports:{}".format(listReports)
+    print "------------------------------------------"
 
     for mail in listReports:
         print "\t+ send_mail(to_addr={}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")".format(mail)
+
+    #---------------------------------Define path folder of script-------------------------------------------
+    base_test_directory = "C:/TanMai/squish_test_suite/squish_test_suites_bdd/"
+    print("------------------------------------------")
+    print(f"***Folder all test suites: {base_test_directory}")
+    print("------------------------------------------")
+#--------------------------------------------------------------------------------------------------------
+
+    total_tsuite = 0
+    total_tscase = 0
+    tscase_errors = []
+    
+    args = sys.argv
+    for i in range(2, len(args)):
+        if os_system == platforms["Linux"]: return
+        else:
+            folders = [name for name in os.listdir(base_test_directory) 
+                        if os.path.isdir(os.path.join(base_test_directory, name)) and not name.startswith('.')]
+            listTestSelected = []
+            print "***Selected folders:"
+            for fol in folders:
+                if fol in listTestSuites:
+                    listTestSelected.append(fol)
+                    print "\t+ {}".format(fol)
+            print "------------------------------------------"
+        print "***Valid folders:"
+        for test in listTestSelected:
+            testPath = os.path.join(base_test_directory, test, "{}.txt".format(sys.argv[i]))
+            if os.path.exists(testPath):
+                testsuite = base_test_directory + test
+                testsuite_directory.append(testsuite)
+                print "\t+ {}: {}".format(test, testsuite)
+        print "------------------------------------------"
+        print "***Size of list test suites: {}".format(str(len(testsuite_directory)))
+        print "------------------------------------------"
+
+    if len(testsuite_directory) == 0:
+        return
 
     return
 
@@ -211,10 +251,12 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print "Running in-run_tst.py..."
+    timeCurrently = datetime.now().strftime("%H:%M:%S")
+    dateCurrently = datetime.today().strftime("%d/%m/%Y")
+    print "[Currently: {} - {}] Running in-run_tst.py...".format(timeCurrently, dateCurrently)
     print "Processing in-run_tst.py with schtasks command..."
     time.sleep(5)
-    jsonFile = r"C:\\TanMai\\TuanNguyen\\input.json"
+    jsonFile = 'C:\\TanMai\\TuanNguyen\\input_{}.json'.format(sys.argv[1])
     with open(jsonFile, 'r') as f:
         data = json.load(f)
     print "***Data JSON:"
@@ -234,8 +276,8 @@ if __name__ == "__main__":
     time.sleep(5)
     print "Processing in-run_tst.py with schtasks command..."
     time.sleep(5)
-    os.system('schtasks /delete /tn "{}" /f'.format(ticket))
+    os.system('del /f /q "C:\\TanMai\\TuanNguyen\\input_{}.json"'.format(sys.argv[1]))
     time.sleep(5)
     print "Finished."
     print "Run automation successful."
-    time.sleep(10)
+    time.sleep(3)

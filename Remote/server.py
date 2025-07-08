@@ -67,13 +67,13 @@ while True:
                             print "Server listenning on [{}:{}]...".format(HOST, PORT)
                             break
                     else:
-                            sendData = {
-                                "argv":"client",
-                                "value":"error"
-                            }
-                            sendJSON = json.dumps(sendData)
-                            conn.sendall((sendJSON + "\n").encode())
-                            continue
+                        sendData = {
+                            "argv":"client",
+                            "value":"error"
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                        continue
                 else:
                     sendData = {
                         "argv":"client",
@@ -103,8 +103,8 @@ while True:
                 timeValue = schedule[0]
                 dateValue = schedule[1]
                 reports = recvData["reports"]
-                # isExistingTask = os.system('schtasks /query /tn "{}" >nul'.format(ticket))
-                # if isExistingTask == 0: os.system('schtasks /delete /tn "{}" /f'.format(ticket))
+                isExistingTask = os.system('schtasks /query /tn "Task_{}" >nul 2>&1'.format(ticket))
+                if isExistingTask == 0: os.system('schtasks /delete /tn "Task_{}" /f'.format(ticket))
                 cmdPARA = {
                     "ticket-id":ticket,
                     "build-version-name":buildName,
@@ -112,13 +112,12 @@ while True:
                     "schedule":schedule,
                     "reports":reports
                 }
-                jsonFile = os.path.join(jsonDir, "input.json")
+                jsonFile = os.path.join(jsonDir, "input_{}.json".format(ticket))
                 with open(jsonFile, 'w') as f:
                     json.dump(cmdPARA, f)
                 # cmdJSON = json.dumps(cmdPARA)
                 # cmd = "python2 in-run_tst.py " + ticket + " bdd_test"
-                cmd = "schtasks /create /tn \"{}\" /tr \"C:\\TanMai\\TuanNguyen\\run.bat\" /sc once /st {}".format(ticket, timeValue)
-                # print(f"CMD:{cmd}")
+                cmd = "schtasks /create /tn \"Task_{}\" /tr \"C:\\TanMai\\TuanNguyen\\run.bat {}\" /sc once /st {} /sd {}".format(ticket, ticket, timeValue, dateValue)
                 sendData = {
                     "argv":"status",
                     "value":"running"
@@ -131,7 +130,7 @@ while True:
                         process = subprocess.call(cmd)
                     else:
                         # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                        process = subprocess.call(cmd)
+                        process = subprocess.call(cmd, shell=True)
                     # process.communicate(input=cmdJSON.encode())
                 except Exception, error:
                     print "Error: " + str(error)
@@ -142,5 +141,5 @@ while True:
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                print "-------------------------------"
+                print "------------------------------------------"
     if not connected: break

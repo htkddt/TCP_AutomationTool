@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QMainWindow, QApplication, QCheckBox, QPushButton, 
                              QDialog, QCalendarWidget, QMenu, QSizePolicy, QVBoxLayout, QHBoxLayout, 
                              QDial, QLabel, QTimeEdit)
 
+from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
 
 EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
@@ -60,6 +61,8 @@ class MainWindow(QMainWindow):
                     self.uic.layoutTestSuites.removeWidget(checkbox)
                     checkbox.setParent(None)
                     checkbox.deleteLater()
+            self.uic.txtTime.setText("hh:mm:ss")
+            self.uic.txtDate.setText("dd/mm/yyyy")
             self.clearCheckedItems(self.uic.layoutReports)
 
     def initData(self, connected):
@@ -101,9 +104,34 @@ class MainWindow(QMainWindow):
     def runAct(self):
         ticket = self.uic.txtTicket.text()
         test = self.getCheckedItems(self.uic.layoutTestSuites)
-        schedule = [self.uic.txtTime.text(), self.uic.txtDate.text()]
+        time = self.uic.txtTime.text()
+        date = self.uic.txtDate.text()
         reports = self.getCheckedItems(self.uic.layoutReports)
-        if (ticket == "") or (len(test) == 0) or (len(reports) == 0): return
+        if (ticket == "") or (len(test) == 0) or (len(reports) == 0) or (time == "hh:mm:ss") or (date == "dd/mm/yyyy"): return
+
+        time = time.split(":")
+        hour = int(time[0])
+        minute = int(time[1])
+        second = int(time[2])
+
+        date = date.split("/")
+        day = int(date[0])
+        month = int(date[1])
+        year = int(date[2])
+
+        localTime = datetime(year, month, day, hour, minute, second)
+
+        localTimeZone = timezone(timedelta(hours=7))   # Local GMT+7
+        serverTimeZone = timezone(timedelta(hours=-7)) # Server GMT-7
+
+        localTime = localTime.replace(tzinfo=localTimeZone)
+        serverTime = localTime.astimezone(serverTimeZone)
+
+        timeValue = serverTime.strftime("%H:%M:%S")
+        dateValue = serverTime.strftime("%m/%d/%Y")
+
+        schedule = [timeValue, dateValue]
+
         sendData = {
             "ticket-id":ticket,
             "build-version-name":self.uic.cBoxBuildVersions.currentText(),
@@ -139,6 +167,7 @@ class MainWindow(QMainWindow):
         dlg = DateDialog()  # Create default calendar and set that layout on dialog
 ##----------------------------------------------------------------------------------------------------------
 ##-------------------------Modify layout of month and year tool button--------------------------------------
+##----------------------------------------------------------------------------------------------------------
         btnMonth = dlg.calendar.findChild(QToolButton, "qt_calendar_monthbutton")
         btnYear = dlg.calendar.findChild(QToolButton, "qt_calendar_yearbutton")
         if btnMonth:
@@ -174,9 +203,10 @@ class MainWindow(QMainWindow):
                     )
                 )
         btnYear.setMenu(menu)
-        dlg.setMinimumSize(625, 300)
+        dlg.setFixedSize(620, 300)
         dlg.dateSelected.connect(self.onDateSelected)
         dlg.exec_()
+##----------------------------------------------------------------------------------------------------------
 ##----------------------------------------------------------------------------------------------------------
 ##----------------------------------------------------------------------------------------------------------
     def showTimeDialog(self):
@@ -300,10 +330,6 @@ class TimeDialog(QDialog):
         self.secondDial.setNotchesVisible(True)
         self.secondDial.setWrapping(True)
 
-        self.hourDial.valueChanged.connect(self.update_label)
-        self.minuteDial.valueChanged.connect(self.update_label)
-        self.secondDial.valueChanged.connect(self.update_label)
-
         btnOK = QPushButton("OK")
         btnOK.setFont(font)
         btnOK.clicked.connect(self.emitTime)
@@ -336,10 +362,14 @@ class TimeDialog(QDialog):
         now = QTime.currentTime()
         self.hourDial.setValue(now.hour())
         self.minuteDial.setValue(now.minute())
-        self.minuteDial.setValue(now.second())
-        self.update_label()
+        self.secondDial.setValue(now.second())
+        self.updateLabel()
 
-    def update_label(self):
+        self.hourDial.valueChanged.connect(self.updateLabel)
+        self.minuteDial.valueChanged.connect(self.updateLabel)
+        self.secondDial.valueChanged.connect(self.updateLabel)
+
+    def updateLabel(self):
         h = self.hourDial.value()
         m = self.minuteDial.value()
         s = self.secondDial.value()

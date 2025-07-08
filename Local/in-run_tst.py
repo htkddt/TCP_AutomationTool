@@ -28,64 +28,57 @@ os_system = platform.system()
 thisdir = os.getcwd()
 
 def run_test(build_version=""):
+    print("------------------------------------------")
     print("***Data details:")
     print(f"- ticket-id:{ticket}")
     print(f"- build-version-name:{buildName}")
     print(f"- test-suites:{listTestSuites}")
     print(f"- schedule:{schedule}")
     print(f"- listReports:{listReports}")
-
+    print("------------------------------------------")
     for mail in listReports:
         print(f"\t+ send_mail(to_addr={mail}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")")
 
-    return
+#---------------------------------Define path folder of script-------------------------------------------
+    base_test_directory = "C:/Users/tuanng4x/Workspace/Tickets/Suite_nocstudio"
+    print("------------------------------------------")
+    print(f"***Folder all test suites: {base_test_directory}")
+    print("------------------------------------------")
+#--------------------------------------------------------------------------------------------------------
 
-    base_test_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-    if "\\" in base_test_directory:
-        base_test_directory = string.replace(base_test_directory, "\\", "/")
-    
     total_tsuite = 0
     total_tscase = 0
     tscase_errors = []
     
     args = sys.argv
     for i in range(2, len(args)):
-        if os_system == platforms["Linux"]:
-            bash_command = "find " + base_test_directory + " -name *" + args[i] + "*"
-            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            out_arrs = output.strip().split("\n")
+        if os_system == platforms["Linux"]: return
         else:
-            os.chdir(base_test_directory)
-            bash_command = "dir *" + args[i] + "* /b/s"
-            process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            temp = output.strip().split("\r\n")
-            out_arrs = []
-            for i in temp:
-                if "\\" in i:
-                    i = string.replace(i, "\\", "/")
-                out_arrs.append(i)
-
-        existing = {}
-        for i in out_arrs:
-            dir_abspath = os.path.abspath(i)
-            if "\\" in dir_abspath:
-                dir_abspath = string.replace(dir_abspath, "\\", "/")
-            pattern = base_test_directory + "([^/]+)/.+"
-            rs = re.findall(pattern, dir_abspath)
-            if len(rs) == 0:
-                continue
-            tssuite_dir = base_test_directory + re.findall(pattern, dir_abspath)[0] + "/"
-            if tssuite_dir in existing:
-                item = existing[tssuite_dir]
-            else:
-                testsuite_directory.append(tssuite_dir)
-                existing[tssuite_dir] = len(out_arrs) - 1
+            folders = [name for name in os.listdir(base_test_directory) 
+                        if os.path.isdir(os.path.join(base_test_directory, name)) and not name.startswith('.')]
+            listTestSelected = []
+            print("***Selected folders:")
+            for fol in folders:
+                if fol in listTestSuites:
+                    listTestSelected.append(fol)
+                    print(f"\t+ {fol}")
+            print("------------------------------------------")
+        print("***Valid folders:")
+        for test in listTestSelected:
+            testPath = os.path.join(base_test_directory, test, f"{sys.argv[i]}.txt")
+            if os.path.exists(testPath):
+                testsuite = base_test_directory + "/" + test
+                testsuite_directory.append(testsuite)
+                print(f"\t+ {test}: {testsuite}")
+        print("------------------------------------------")
+        print(f"***Size of list test suites: {str(len(testsuite_directory))}")
+        print("------------------------------------------")
 
     if len(testsuite_directory) == 0:
-        return 
-    
+        return
+
+    return
+
     start_squish_server()
     testsuite_directory.sort()
     start_time = time.time()
@@ -211,10 +204,12 @@ def getTestcaseErrors():
     return tstcase_errors
 
 if __name__ == "__main__":
-    print("Running in-run_tst.py...")
+    timeCurrently = datetime.now().strftime("%H:%M:%S")
+    dateCurrently = datetime.today().strftime("%d/%m/%Y")
+    print(f"[Currently: {timeCurrently} - {dateCurrently}] Running in-run_tst.py...")
     print("Processing in-run_tst.py with schtasks command...")
     time.sleep(5)
-    jsonFile = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\input.json"
+    jsonFile = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\input_{sys.argv[1]}.json"
     with open(jsonFile, 'r') as f:
         data = json.load(f)
     print("***Data JSON:")
@@ -234,7 +229,7 @@ if __name__ == "__main__":
     time.sleep(5)
     print("Processing in-run_tst.py with schtasks command...")
     time.sleep(5)
-    os.system(f'schtasks /delete /tn "{ticket}" /f')
+    os.system(f'del /f /q "C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\input_{sys.argv[1]}.json"')
     time.sleep(5)
     print("Finished.")
     print("Run automation successful.")
