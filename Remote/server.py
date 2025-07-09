@@ -22,7 +22,7 @@ print "Server listenning on [{}:{}]...".format(HOST, PORT)
 while True:
     conn, addr = s.accept()
     print "Connected from {}".format(addr)
-    print "------------------------------------------"
+    print "------------------------------------------------------------------------------"
     connected = True
     while True:
         recvJSON = ""
@@ -50,7 +50,7 @@ while True:
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                        print "------------------------------------------"
+                        print "------------------------------------------------------------------------------"
                         continue
                     elif recvData["value"] == "close" or recvData["value"] == "stop":
                         sendData = {
@@ -82,7 +82,7 @@ while True:
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
                     print "ERROR: Incorrect request from client\nTo disconnect type: server stop or client stop"
-                    print "------------------------------------------"
+                    print "------------------------------------------------------------------------------"
                     continue
             else:
                 ticket = recvData["ticket-id"]
@@ -141,5 +141,5 @@ while True:
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                print "------------------------------------------"
+                print "------------------------------------------------------------------------------"
     if not connected: break

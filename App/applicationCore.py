@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QCheckBox, QPushButton, QToolButton, 
                              QDialog, QCalendarWidget, QMenu, QSizePolicy, QVBoxLayout, QHBoxLayout, 
-                             QDial, QLabel, QTimeEdit)
+                             QDial, QLabel, QMessageBox)
 
 from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
@@ -97,6 +97,12 @@ class MainWindow(QMainWindow):
                     self.uic.btnCancel.setEnabled(False)
                     self.uic.btnConDis.setEnabled(False)
                 elif recvData["value"] == "finished":
+                    QMessageBox.information(
+                        self,
+                        "Information",
+                        f"The scheduled task {self.uic.txtTicket.text()} has successfully been created.\nDate: {self.uic.txtDate.text()}\nTime: {self.uic.txtTime.text()}",
+                        QMessageBox.StandardButton.Ok
+                    )
                     self.uic.btnOK.setEnabled(True)
                     self.uic.btnCancel.setEnabled(True)
                     self.uic.btnConDis.setEnabled(True)
@@ -253,7 +259,7 @@ class TCPSocketConnection(QThread):
             self.socket.close()
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = False
-        print("Disconnected")
+        # print("Disconnected")
 
     def serverAddress(self, HOST, Port):
         self.HOST = HOST
@@ -293,7 +299,7 @@ class TCPSocketReceiver(QThread):
         self.running = False
         if self.socket:
             self.socket.shutdown(socket.SHUT_RDWR)
-        print("TCPSocketReceiver is close")
+        # print("TCPSocketReceiver is close")
 
 
 class TimeDialog(QDialog):
