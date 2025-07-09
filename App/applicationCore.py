@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
 
 EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
-          "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com"]
+          "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com", "kiet.huynh@terralogic.com"]
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -229,13 +229,13 @@ class TCPSocketConnection(QThread):
         self.HOST = ''
         self.Port = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("TCPSocket thread Finished Init")
+        # print("TCPSocket thread Finished Init")
 
     def run(self):
         try:
             self.socket.connect((self.HOST, self.Port))
-            print("Connection is established...")
-            print("------------------------------------------")
+            # print("Connection is established...")
+            # print("------------------------------------------")
             self.connected = True
             self.receiver = TCPSocketReceiver(self.socket)
             self.receiver.start()

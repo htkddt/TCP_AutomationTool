@@ -25,7 +25,7 @@ recipient=""
 os.environ["DISPLAY"] = ":1.0"
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
-thisdir = os.getcwd()
+# thisdir = os.getcwd()
 
 def run_test(build_version=""):
     print "------------------------------------------"
@@ -40,11 +40,17 @@ def run_test(build_version=""):
     for mail in listReports:
         print "\t+ send_mail(to_addr={}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")".format(mail)
 
-    #---------------------------------Define path folder of script-------------------------------------------
-    base_test_directory = "C:/TanMai/squish_test_suite/squish_test_suites_bdd/"
-    print("------------------------------------------")
-    print(f"***Folder all test suites: {base_test_directory}")
-    print("------------------------------------------")
+#---------------------------------Define path folder of script-------------------------------------------
+    reportdir = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\html_report_{}".format(ticket)
+    # if "\\" in reportdir:
+    #     reportdir = string.replace(reportdir, "\\", "/")
+    base_test_directory = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\"
+    if "\\" in base_test_directory:
+        base_test_directory = string.replace(base_test_directory, "\\", "/")
+    print "------------------------------------------"
+    print "***Folder all test suites: {}".format(base_test_directory)
+    print "***Folder html report: {}".format(reportdir)
+    print "------------------------------------------"
 #--------------------------------------------------------------------------------------------------------
 
     total_tsuite = 0
@@ -69,66 +75,69 @@ def run_test(build_version=""):
             testPath = os.path.join(base_test_directory, test, "{}.txt".format(sys.argv[i]))
             if os.path.exists(testPath):
                 testsuite = base_test_directory + test
+                if "\\" in testsuite:
+                    testsuite = string.replace(testsuite, "\\", "/")
                 testsuite_directory.append(testsuite)
                 print "\t+ {}: {}".format(test, testsuite)
         print "------------------------------------------"
         print "***Size of list test suites: {}".format(str(len(testsuite_directory)))
         print "------------------------------------------"
 
-    if len(testsuite_directory) == 0:
-        return
-
-    return
-
-    base_test_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-    if "\\" in base_test_directory:
-        base_test_directory = string.replace(base_test_directory, "\\", "/")
+    # base_test_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+    # if "\\" in base_test_directory:
+    #     base_test_directory = string.replace(base_test_directory, "\\", "/")
     
-    total_tsuite = 0
-    total_tscase = 0
-    tscase_errors = []
+    # total_tsuite = 0
+    # total_tscase = 0
+    # tscase_errors = []
     
-    args = sys.argv
-    for i in range(2, len(args)):
-        if os_system == platforms["Linux"]:
-            bash_command = "find " + base_test_directory + " -name *" + args[i] + "*"
-            process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            out_arrs = output.strip().split("\n")
-        else:
-            os.chdir(base_test_directory)
-            bash_command = "dir *" + args[i] + "* /b/s"
-            process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            temp = output.strip().split("\r\n")
-            out_arrs = []
-            for i in temp:
-                if "\\" in i:
-                    i = string.replace(i, "\\", "/")
-                out_arrs.append(i)
+    # args = sys.argv
+    # for i in range(2, len(args)):
+    #     if os_system == platforms["Linux"]:
+    #         bash_command = "find " + base_test_directory + " -name *" + args[i] + "*"
+    #         process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+    #         output = process.communicate()[0]
+    #         out_arrs = output.strip().split("\n")
+    #     else:
+    #         os.chdir(base_test_directory)
+    #         bash_command = "dir *" + args[i] + "* /b/s"
+    #         process = subprocess.Popen(bash_command.split(), shell=True, stdout=subprocess.PIPE)
+    #         output = process.communicate()[0]
+    #         temp = output.strip().split("\r\n")
+    #         out_arrs = []
+    #         for i in temp:
+    #             if "\\" in i:
+    #                 i = string.replace(i, "\\", "/")
+    #             out_arrs.append(i)
 
-        existing = {}
-        for i in out_arrs:
-            dir_abspath = os.path.abspath(i)
-            if "\\" in dir_abspath:
-                dir_abspath = string.replace(dir_abspath, "\\", "/")
-            pattern = base_test_directory + "([^/]+)/.+"
-            rs = re.findall(pattern, dir_abspath)
-            if len(rs) == 0:
-                continue
-            tssuite_dir = base_test_directory + re.findall(pattern, dir_abspath)[0] + "/"
-            if tssuite_dir in existing:
-                item = existing[tssuite_dir]
-            else:
-                testsuite_directory.append(tssuite_dir)
-                existing[tssuite_dir] = len(out_arrs) - 1
+    #     existing = {}
+    #     for i in out_arrs:
+    #         dir_abspath = os.path.abspath(i)
+    #         if "\\" in dir_abspath:
+    #             dir_abspath = string.replace(dir_abspath, "\\", "/")
+    #         pattern = base_test_directory + "([^/]+)/.+"
+    #         rs = re.findall(pattern, dir_abspath)
+    #         if len(rs) == 0:
+    #             continue
+    #         tssuite_dir = base_test_directory + re.findall(pattern, dir_abspath)[0] + "/"
+    #         if tssuite_dir in existing:
+    #             item = existing[tssuite_dir]
+    #         else:
+    #             testsuite_directory.append(tssuite_dir)
+    #             existing[tssuite_dir] = len(out_arrs) - 1
 
     if len(testsuite_directory) == 0:
         return 
     
+    # return
+
     start_squish_server()
     testsuite_directory.sort()
     start_time = time.time()
+    
+    if os.path.exists(reportdir):
+        shutil.rmtree(reportdir)
+    os.mkdir(reportdir)
 
     for d in (testsuite_directory):
         source_file ="C:\\Users\\maitanx\\backup_ini\\NocStudio.ini"
@@ -136,7 +145,7 @@ def run_test(build_version=""):
         shutil.copy2(source_file, destination_folder)
         print "in folder + " + d + "\n"
         total_tsuite += 1
-        bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,html_report"
+        bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,{}".format(reportdir)
         print "begin execute testsuite"
         if os_system == platforms["Linux"]:
             process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
@@ -155,7 +164,10 @@ def run_test(build_version=""):
     current_day = string.replace(temp[0], "-", "_")
     current_time = string.replace(temp[1].split(".")[0], ":", "_")
     total_tscase = getTotalTestcase()
-    tscase_errors = getTestcaseErrors()
+    tscase_errors = getTestcaseErrors(reportdir)
+
+    report_link = "\\\\samba.zsc11.intel.com\\nfs\\site\\proj\\CFG\\scratch2\\tanmaix\\tcp_auto\\"
+    os.system("xcopy " + reportdir + " " + report_link  + " /E/H/C/I")
 
     subject = "GUI Automation Test Report for " + str(build_version)
     content = ""
@@ -166,11 +178,13 @@ def run_test(build_version=""):
     content += "- Failed Test cases: " + str(len(tscase_errors)) + "\n"
     content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
     content +="\n";
+    content += 'Please click below link to read more details: \n'
+    content += "file:///" + report_link + "html_report_" + ticket + "\\index.html" + "\n"
     
     for mail in listReports:
         send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
 
-    shutil.rmtree("html_report")
+    shutil.rmtree(reportdir)
 
     stop_squish_server()
 
@@ -231,10 +245,11 @@ def getTotalTestcase():
                 total_tst += 1
     return total_tst
 
-def getTestcaseErrors():
+def getTestcaseErrors(reportpath):
     tstcase_errors = []
     data = []
-    f = open(thisdir + "\\html_report\\data\\results-v1.js", "r")
+    # f = open(thisdir + "\\html_report\\data\\results-v1.js", "r")
+    f = open(reportpath + "\\data\\results-v1.js", "r")
     content = f.read().strip('\n')
     content = content.lstrip("var data = [];\ndata.push( ").rstrip(");")
     content_json = content.replace("data.push(", "").replace(");", ",\n");
