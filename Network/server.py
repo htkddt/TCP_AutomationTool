@@ -7,17 +7,9 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-# Note:
-# - Python: C:\\Program Files\\Python313\\python.exe
-# - Windows Batch File: C:\Users\tuanng4x\Workspace\Tickets\TCP_AutomationTool\Network\run.bat
-
-#jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
 jsonDir = f"D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network"
-
-#buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-#testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
 buildDir = f"D:\\A_TerraLogic\\TTSApplication"
-testDir = f"D:\\A_TerraLogic\\"
+testDir = f"D:\\A_TerraLogic\\TerraTool\\Suite_nocstudio"
 
 HOST = '127.0.0.1'
 PORT = 8888
