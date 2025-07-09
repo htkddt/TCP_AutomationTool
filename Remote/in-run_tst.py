@@ -159,15 +159,15 @@ def run_test(build_version=""):
     temp = (time.time() - start_time) / 3600
     elapsed_time = float("{0:.2f}".format(temp))
  
-    current_date = datetime.now()
-    temp = str(current_date).split()
+    date = datetime.now()
+    temp = str(date).split()
     current_day = string.replace(temp[0], "-", "_")
     current_time = string.replace(temp[1].split(".")[0], ":", "_")
     total_tscase = getTotalTestcase()
     tscase_errors = getTestcaseErrors(reportdir)
 
     report_link = "\\\\samba.zsc11.intel.com\\nfs\\site\\proj\\CFG\\scratch2\\tanmaix\\tcp_auto\\"
-    os.system("xcopy " + reportdir + " " + report_link  + " /E/H/C/I")
+    os.system("xcopy " + reportdir + " " + report_link  + " /E/H/C/I/Y")
 
     subject = "GUI Automation Test Report for " + str(build_version)
     content = ""
@@ -178,8 +178,7 @@ def run_test(build_version=""):
     content += "- Failed Test cases: " + str(len(tscase_errors)) + "\n"
     content += "- Build Version Test: NocStudio_" + str(build_version) + "\n"
     content +="\n";
-    content += 'Please click below link to read more details: \n'
-    content += "file:///" + report_link + "html_report_" + ticket + "\\index.html" + "\n"
+    content += "file:///" + report_link + "index.html" + "\n"
     
     for mail in listReports:
         send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
