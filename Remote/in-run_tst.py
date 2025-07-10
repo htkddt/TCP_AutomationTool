@@ -10,6 +10,7 @@ import shutil
 import platform
 import time
 import string
+# from datetime import datetime, timedelta, timezone
 from datetime import datetime
 import json
 
@@ -48,7 +49,7 @@ def run_test(build_version=""):
         print "\t+ send_mail(to_addr={}, cc_mail=cc_mail0, subject=subject, content=content, file_location="")".format(mail)
 
 #---------------------------------Define path folder of script-------------------------------------------
-    report_directory = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\html_report_{}".format(ticket)
+    report_directory = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\html_report"
     base_test_directory = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\"
     if "\\" in base_test_directory:
         base_test_directory = string.replace(base_test_directory, "\\", "/")
@@ -110,8 +111,8 @@ def run_test(build_version=""):
         print "***In folder: " + d
         print "------------------------------------------------------------------------------"
         total_tsuite += 1
-        # bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --aut {} --reportgen html,{}".format(buildName, report_directory)
-        bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,{} --reportgen stdout,{}".format(report_directory, report_directory + "\\results.txt")
+        # bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --aut {} --reportgen html,{}".format(buildName, report_directory, report_directory + "\\results.txt")
+        bash_command = "squishrunner --debugLog alpw --port 4322 --testsuite " + d + " --reportgen html,{} --reportgen stdout,{}".format(report_directory, report_directory + "\\report_{}.txt".format(d.split("/")[-1]))
         print "Begin execute testsuite"
         if os_system == platforms["Linux"]:
             process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
@@ -124,20 +125,37 @@ def run_test(build_version=""):
           
     temp = (time.time() - start_time) / 3600
     elapsed_time = float("{0:.2f}".format(temp))
- 
-    # date = datetime.now()
-    # temp = str(date).split()
-    # current_day = string.replace(temp[0], "-", "_")
-    # current_time = string.replace(temp[1].split(".")[0], ":", "_")
+
+    # time = schedule[0].split(":")
+    # hour = int(time[0])
+    # minute = int(time[1])
+    # second = int(time[2])
+
+    # date = schedule[1].split("/")
+    # day = int(date[0])
+    # month = int(date[1])
+    # year = int(date[2])
+
+    # serverTime = datetime(year, month, day, hour, minute, second)
+
+    # localTimeZone = timezone(timedelta(hours=7))   # Local GMT+7
+    # serverTimeZone = timezone(timedelta(hours=-7)) # Server GMT-7
+
+    # serverTime = serverTime.replace(tzinfo=serverTimeZone)
+    # localTime = serverTime.astimezone(localTimeZone)
+
+    # timeValue = localTime.strftime("%H_%M_%S")
+    # dateValue = localTime.strftime("%d_%m_%Y")
+
     total_tscase = getTotalTestcase()
     tscase_errors = getTestcaseErrors(report_directory)
 
-    report_link = "\\\\samba.zsc11.intel.com\\nfs\\site\\proj\\CFG\\scratch2\\tanmaix\\tcp_auto\\"
+    report_link = "\\\\samba.zsc11.intel.com\\nfs\\site\\proj\\CFG\\scratch2\\tanmaix\\tcp_auto\\report_[" + str(dateCurrently) + "]_[" + str(timeCurrently) + "]\\"
     os.system("xcopy " + report_directory + " " + report_link  + " /E/H/C/I/Y")
 
     subject = "GUI Automation Test Report for " + str(build_version)
     content = ""
-    content += "This is the automation test report for NocStudio (Date: " + str(schedule[1]) + " - Time: " + str(schedule[0]) + "). \n"
+    content += "This is the automation test report for NocStudio (Date: " + str(dateCurrently) + " - Time: " + str(timeCurrently) + "). \n"
     content +="\n";
     content += "- Total Test cases: " + str(total_tscase) + "\n"
     content += "- Total Time: " + str(elapsed_time) + "(h)\n"
@@ -146,19 +164,20 @@ def run_test(build_version=""):
     content +="\n";
     content += "file:///" + report_link + "index.html" + "\n"
 
-    results_file_path = report_link + "results.txt"
+    results_file_path = [os.path.join(report_link, name) for name in os.listdir(report_link) 
+                if os.path.isfile(os.path.join(report_link, name)) and name.endswith('.txt')]
+    # results_file_path = report_link + "results.txt"
     
     for mail in listReports:
-        send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location="")
-        # send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location=results_file_path)
+        send_mail(to_addr=mail, cc_mail="", subject=subject, content=content, file_location=results_file_path)
 
     shutil.rmtree(report_directory)
 
     stop_squish_server()
 
 def config_squish_server(name):
-    build_directory = "C:\\TanMai\\NocStudio\\{}.exe".format(name)
-    bash_command = "squishserver --config addAUT {} {}".format(name, build_directory)
+    build_directory = "C:\\TanMai\\NocStudio\\{}".format(name)
+    bash_command = "squishserver --config addAUT {} {}".format(name.split(".")[0], build_directory)
     if os_system == platforms["Linux"]:
         process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     else:
@@ -184,7 +203,7 @@ def stop_squish_server():
     
     return process.returncode
 
-def send_mail(to_addr="", cc_mail="", subject="Netspeed", content="Auto", file_location=""):
+def send_mail(to_addr="", cc_mail="", subject="Netspeed", content="Auto", file_location=[]):
     if os_system == platforms["Linux"]:
         bash_command = ["mail", "-s", subject, recipient]
         try:
@@ -202,14 +221,24 @@ def send_mail(to_addr="", cc_mail="", subject="Netspeed", content="Auto", file_l
         
         msg.attach(MIMEText(content, 'plain'))
 
-        if file_location != "":
-            filename = os.path.basename(file_location)
-            attachment = open(file_location, "rb")
+        # if file_location != "":
+        #     filename = os.path.basename(file_location)
+        #     attachment = open(file_location, "rb")
+        #     part = MIMEBase('application', 'octet-stream')
+        #     part.set_payload((attachment).read())
+        #     encoders.encode_base64(part)
+        #     part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+        #     msg.attach(part)
+        
+        for file in file_location:
+            filename = os.path.basename(file)
+            attachment = open(file, "rb")
             part = MIMEBase('application', 'octet-stream')
             part.set_payload((attachment).read())
             encoders.encode_base64(part)
             part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
             msg.attach(part)
+        
         s = smtplib.SMTP('smtp.intel.com')
         s.sendmail(sender_on_windows, recipient, msg.as_string())
         s.quit()
@@ -226,7 +255,6 @@ def getTotalTestcase():
 def getTestcaseErrors(report_path):
     tstcase_errors = []
     data = []
-    # f = open(thisdir + "\\html_report\\data\\results-v1.js", "r")
     f = open(report_path + "\\data\\results-v1.js", "r")
     content = f.read().strip('\n')
     content = content.lstrip("var data = [];\ndata.push( ").rstrip(");")
@@ -244,10 +272,9 @@ def getTestcaseErrors(report_path):
     return tstcase_errors
 
 if __name__ == "__main__":
-    timeCurrently = datetime.now().strftime("%H:%M:%S")
-    dateCurrently = datetime.today().strftime("%d/%m/%Y")
+    timeCurrently = datetime.now().strftime("%H_%M_%S")
+    dateCurrently = datetime.today().strftime("%d_%m_%Y")
     print "[Currently: {} - {}] Running in-run_tst.py...".format(timeCurrently, dateCurrently)
-    print "Processing in-run_tst.py with schtasks command..."
     time.sleep(5)
     jsonFile = 'C:\\TanMai\\TuanNguyen\\input_{}.json'.format(sys.argv[1])
     with open(jsonFile, 'r') as f:
@@ -263,14 +290,7 @@ if __name__ == "__main__":
     listReports = data["reports"]
     run_test(ticket)
     time.sleep(5)
-    print "Processing in-run_tst.py with schtasks command..."
-    time.sleep(5)
-    print "Processing in-run_tst.py with schtasks command..."
-    time.sleep(5)
-    print "Processing in-run_tst.py with schtasks command..."
-    time.sleep(5)
     os.system('del /f /q "C:\\TanMai\\TuanNguyen\\input_{}.json"'.format(sys.argv[1]))
-    time.sleep(5)
     print "Finished."
     print "Run automation successful."
     time.sleep(3)
