@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 import json
+import shutil
 
 from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -492,6 +493,8 @@ class DateDialog(QDialog):
 
 if __name__ == "__main__":
     os.system('pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py')
+    if os.path.exists("build"):
+        shutil.rmtree("build")
     app = QApplication(sys.argv)
     window = MainWindow()
     window.setMinimumSize(400, 600)
