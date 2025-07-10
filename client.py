@@ -3,9 +3,7 @@ import os
 import socket
 import json
 
-# Release: 
-#   - Syntax:   pyinstaller --onefile --noconsole --name {file_name} --icon={icon_name}.ico --distpath {"folder_path"} {script_name.py}
-#   - Ex:       pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath "D:\A_TerraLogic_Project\TerraTool\TCPTool" applicationCore.py
+# Release: pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py
 # Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 16:47 03/07/2025 sangx.phan@intel.com|thex.do@intel.com|tuanx.nguyen@intel.com
 
 if len(sys.argv) < 2:

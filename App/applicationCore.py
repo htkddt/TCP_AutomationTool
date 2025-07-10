@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QCheckBox, QPushButton, QToolButton, 
                              QDialog, QCalendarWidget, QMenu, QSizePolicy, QVBoxLayout, QHBoxLayout, 
-                             QDial, QLabel, QMessageBox)
+                             QDial, QLabel, QMessageBox, QFileDialog)
 
 from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
@@ -31,6 +31,7 @@ class MainWindow(QMainWindow):
         self.socket.responseFinished.connect(self.serverResponseAct)
 
         self.uic.btnConDis.clicked.connect(self.establishConnectAct)
+        self.uic.btnAddBuildVersion.clicked.connect(self.addBuildAct)
         self.uic.btnOK.clicked.connect(self.runAct)
         self.uic.btnCancel.clicked.connect(self.clearSelection)
         self.uic.txtDate.mousePressEvent = lambda event: self.showDateDialog()
@@ -73,6 +74,29 @@ class MainWindow(QMainWindow):
         }
         self.socket.clientRequest(sendData)
 
+    def addBuildAct(self):
+        filePath, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open file",
+            "",
+            "Executable Files (*.exe);;All Files (*)"
+        )
+
+        if filePath:
+            fileName = filePath.split("/")[-1].split(".")[0]
+            fileSize = os.path.getsize(filePath)
+            sendData = {
+                "argv":"header",
+                "value":[fileName, str(fileSize)]
+            }
+            self.socket.clientRequest(sendData)
+            with open(filePath, 'rb') as f:
+                while True:
+                    bin = f.read(1024)
+                    if not bin:
+                        break
+                    self.socket.clientRequest(bin, True)
+
     def serverResponseAct(self, recvData):
         if (len(recvData) == 2):
             if recvData["argv"] == "client":
@@ -91,8 +115,19 @@ class MainWindow(QMainWindow):
                         checkbox = QCheckBox(test)
                         self.uic.layoutTestSuites.addWidget(checkbox)
                     self.uic.layoutTestSuites.addStretch()
+            elif recvData["argv"] == "updated":
+                buildUpdated = recvData["value"]
+                for build in buildUpdated:
+                    self.uic.cBoxBuildVersions.addItem(build)
             elif recvData["argv"] == "status":
-                if recvData["value"] == "running":
+                if recvData["value"] == "successful":
+                    if (self.uic.cBoxBuildVersions.count() > 0): self.uic.cBoxBuildVersions.clear()
+                    sendData = {
+                        "argv":"header",
+                        "value":"update"
+                    }
+                    self.socket.clientRequest(sendData)
+                elif recvData["value"] == "running":
                     self.uic.btnOK.setEnabled(False)
                     self.uic.btnCancel.setEnabled(False)
                     self.uic.btnConDis.setEnabled(False)
@@ -141,7 +176,6 @@ class MainWindow(QMainWindow):
         sendData = {
             "ticket-id":ticket,
             "build-version-name":self.uic.cBoxBuildVersions.currentText(),
-            "build-version-size":"0",
             "test-suites":test,
             "schedule":schedule,
             "reports":reports
@@ -168,12 +202,11 @@ class MainWindow(QMainWindow):
         self.uic.txtTicket.clear()
         self.clearCheckedItems(self.uic.layoutTestSuites)
         self.clearCheckedItems(self.uic.layoutReports)
-
-    def showDateDialog(self):
-        dlg = DateDialog()  # Create default calendar and set that layout on dialog
 ##----------------------------------------------------------------------------------------------------------
 ##-------------------------Modify layout of month and year tool button--------------------------------------
 ##----------------------------------------------------------------------------------------------------------
+    def showDateDialog(self):
+        dlg = DateDialog()  # Create default calendar and set that layout on dialog
         btnMonth = dlg.calendar.findChild(QToolButton, "qt_calendar_monthbutton")
         btnYear = dlg.calendar.findChild(QToolButton, "qt_calendar_yearbutton")
         if btnMonth:
@@ -265,9 +298,12 @@ class TCPSocketConnection(QThread):
         self.HOST = HOST
         self.Port = Port
 
-    def clientRequest(self, sendData):
-        sendJSON = json.dumps(sendData)
-        self.socket.sendall((sendJSON + "\n").encode())
+    def clientRequest(self, sendData, addBuild=False):
+        if addBuild:
+            self.socket.sendall(sendData)
+        else:
+            sendJSON = json.dumps(sendData)
+            self.socket.sendall((sendJSON + "\n").encode())
 
     def serverResponse(self, recvJSON):
         recvData = json.loads(recvJSON.strip())
@@ -455,8 +491,9 @@ class DateDialog(QDialog):
         self.accept()
 
 if __name__ == "__main__":
+    os.system('pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py')
     app = QApplication(sys.argv)
     window = MainWindow()
     window.setMinimumSize(400, 600)
-    window.showMinimized()
+    window.show()
     sys.exit(app.exec())

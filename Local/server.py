@@ -74,6 +74,36 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
                             continue
+                    elif recvData["argv"] == "header":
+                        if recvData["value"] == "update":
+                            filesUpdated = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
+                                            if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
+                            sendData = {
+                                "argv":"updated",
+                                "value": filesUpdated
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                        else:
+                            print("Request to add new build file from client")
+                            fileName = recvData["value"][0] + ".exe"
+                            fileSize = int(recvData["value"][1])
+                            destPath = os.path.join(buildDir, fileName)
+                            with open(destPath, 'wb') as f:
+                                size = 0
+                                while size < fileSize:
+                                    bin = conn.recv(min(4096, fileSize - size))
+                                    if not bin:
+                                        break
+                                    f.write(bin)
+                                    size += len(bin)
+                            sendData = {
+                                "argv":"status",
+                                "value":"successful"
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                            print("------------------------------------------")
                     else:
                         sendData = {
                             "argv":"client",
@@ -87,17 +117,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 else:
                     ticket = recvData["ticket-id"]
                     buildName = recvData["build-version-name"] + ".exe"
-                    buildSize = int(recvData["build-version-size"])
-                    if buildSize != 0:
-                        destPath = os.path.join(buildDir, buildName)
-                        with open(destPath, 'wb') as f:
-                            size = 0
-                            while size < buildSize:
-                                bin = conn.recv(min(4096, buildSize - size))
-                                if not bin:
-                                    break
-                                f.write(bin)
-                                size += len(bin)
+                    # buildSize = int(recvData["build-version-size"])
+                    # if buildSize != 0:
+                    #     destPath = os.path.join(buildDir, buildName)
+                    #     with open(destPath, 'wb') as f:
+                    #         size = 0
+                    #         while size < buildSize:
+                    #             bin = conn.recv(min(4096, buildSize - size))
+                    #             if not bin:
+                    #                 break
+                    #             f.write(bin)
+                    #             size += len(bin)
                     testSuites = recvData["test-suites"]
                     schedule = recvData["schedule"]
                     timeValue = schedule[0]
