@@ -2,7 +2,6 @@ import os
 import sys
 import socket
 import json
-import shutil
 
 from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -90,10 +89,13 @@ class MainWindow(QMainWindow):
                 "argv":"header",
                 "value":[fileName, str(fileSize)]
             }
+            # print(f"filePath: {filePath}")
+            # print(f"fileName: {fileName}")
+            # print(f"fileSize: {str(fileSize)}")
             self.socket.clientRequest(sendData)
             with open(filePath, 'rb') as f:
                 while True:
-                    bin = f.read(1024)
+                    bin = f.read(4096)
                     if not bin:
                         break
                     self.socket.clientRequest(bin, True)
@@ -492,9 +494,25 @@ class DateDialog(QDialog):
         self.accept()
 
 if __name__ == "__main__":
-    os.system('pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py')
-    if os.path.exists("build"):
-        shutil.rmtree("build")
+    # os.system('pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py')
+    # try:
+    #     import PyInstaller.__main__
+    # except ImportError:
+    #     import subprocess
+    #     subprocess.check_call(['pip', 'install', 'pyinstaller'])
+    #     import PyInstaller.__main__
+
+    # PyInstaller.__main__.run([
+    #     '--onefile',
+    #     '--noconsole',
+    #     '--name=TCPAutomation',
+    #     '--icon=nsicon.ico',
+    #     '--distpath=.',
+    #     './App/applicationCore.py'
+    # ])
+    # if os.path.exists("build"):
+    #     shutil.rmtree("build")
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.setMinimumSize(400, 600)

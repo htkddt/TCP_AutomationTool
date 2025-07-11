@@ -7,9 +7,9 @@ import json
 platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
-jsonDir = r"C:\\TanMai\\TuanNguyen\\"
-buildDir = r"C:\\TanMai\\NocStudio\\"
-testDir = r"C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\"
+jsonDir = "C:\\TanMai\\TuanNguyen\\"
+buildDir = "C:\\TanMai\\NocStudio\\"
+testDir = "C:\\TanMai\\squish_test_suite\\squish_test_suites_bdd\\"
 
 HOST = '0.0.0.0'
 PORT = 9999
@@ -36,7 +36,7 @@ while True:
             if len(recvData) == 2:
                 if recvData["argv"] == "server":
                     if recvData["value"] == "init":
-                        print "Collect available data for client"
+                        print "Request to collect available data from client"
                         files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                     if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                         folders = [name for name in os.listdir(testDir) 
@@ -50,6 +50,7 @@ while True:
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
+                        print "Collect available data successful"
                         print "------------------------------------------------------------------------------"
                         continue
                     elif recvData["value"] == "close" or recvData["value"] == "stop":
@@ -66,36 +67,6 @@ while True:
                         if recvData["value"] == "stop":
                             print "Server listenning on [{}:{}]...".format(HOST, PORT)
                             break
-                    elif recvData["argv"] == "header":
-                        if recvData["value"] == "update":
-                            filesUpdated = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
-                                            if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
-                            sendData = {
-                                "argv":"updated",
-                                "value": filesUpdated
-                            }
-                            sendJSON = json.dumps(sendData)
-                            conn.sendall((sendJSON + "\n").encode())
-                        else:
-                            print "Request to add new build file from client"
-                            fileName = recvData["value"][0] + ".exe"
-                            fileSize = int(recvData["value"][1])
-                            destPath = os.path.join(buildDir, fileName)
-                            with open(destPath, 'wb') as f:
-                                size = 0
-                                while size < fileSize:
-                                    bin = conn.recv(min(4096, fileSize - size))
-                                    if not bin:
-                                        break
-                                    f.write(bin)
-                                    size += len(bin)
-                            sendData = {
-                                "argv":"status",
-                                "value":"successful"
-                            }
-                            sendJSON = json.dumps(sendData)
-                            conn.sendall((sendJSON + "\n").encode())
-                            print "------------------------------------------------------------------------------"
                     else:
                         sendData = {
                             "argv":"client",
@@ -104,6 +75,40 @@ while True:
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
                         continue
+                elif recvData["argv"] == "header":
+                    if recvData["value"] == "update":
+                        filesUpdated = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
+                                        if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
+                        sendData = {
+                            "argv":"updated",
+                            "value": filesUpdated
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                    else:
+                        print "Request to add new build file from client"
+                        fileName = recvData["value"][0] + ".exe"
+                        fileSize = int(recvData["value"][1])
+                        destPath = os.path.join(buildDir, fileName)
+                        # print "destPath: {}".format(destPath)
+                        # print "fileName: {}".format(fileName)
+                        # print "fileSize: {}".format(str(fileSize))
+                        with open(destPath, 'wb') as f:
+                            size = 0
+                            while size < fileSize:
+                                bin = conn.recv(min(4096, fileSize - size))
+                                if not bin:
+                                    break
+                                f.write(bin)
+                                size += len(bin)
+                        sendData = {
+                            "argv":"status",
+                            "value":"successful"
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                        print "Save build successful"
+                        print "------------------------------------------------------------------------------"
                 else:
                     sendData = {
                         "argv":"client",
