@@ -66,6 +66,16 @@ class MainWindow(QMainWindow):
             self.uic.txtDate.setText("dd/mm/yyyy")
             self.clearCheckedItems(self.uic.layoutReports)
 
+    def close(self):
+        if self.connected:
+            sendData = {
+                "argv":"server",
+                "value":"stop"
+            }
+            self.socket.clientRequest(sendData)
+            while True:
+                if not self.connected: break
+
     def initData(self, connected):
         if not connected: return
         sendData = {
@@ -73,6 +83,7 @@ class MainWindow(QMainWindow):
             "value":"init"
         }
         self.socket.clientRequest(sendData)
+        self.connected = True
 
     def addBuildAct(self):
         filePath, _ = QFileDialog.getOpenFileName(
@@ -105,6 +116,7 @@ class MainWindow(QMainWindow):
             if recvData["argv"] == "client":
                 if recvData["value"] == "disconnected":
                     self.socket.stop()
+                    self.connected = False
                 elif recvData["value"] == "finished":
                     self.uic.btnOK.setEnabled(True)
                     self.uic.btnCancel.setEnabled(True)
