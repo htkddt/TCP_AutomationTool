@@ -8,8 +8,8 @@ platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
 jsonDir = f"D:\\A_TerraLogic\\TerraTool\\TCPTool\\Network"
-buildDir = f"D:\\A_TerraLogic\\TerraTool\\Server"
-testDir = f"D:\\A_TerraLogic\\TerraTool\\Suite_nocstudio"
+buildDir = f"D:\\A_TerraLogic\\TerraTool\\Server\\NocStudio"
+testDir = f"D:\\A_TerraLogic\\TerraTool\\Server\\squish_test_suite\\squish_test_suites_bdd"
 
 HOST = '127.0.0.1'
 PORT = 8888
