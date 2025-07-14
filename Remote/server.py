@@ -53,18 +53,21 @@ while True:
                         print "Collect available data successful"
                         print "------------------------------------------------------------------------------"
                         continue
-                    elif recvData["value"] == "close" or recvData["value"] == "stop":
+                    elif recvData["value"] == "restart" or recvData["value"] == "stop":
                         sendData = {
                             "argv":"client",
                             "value":"disconnected"
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
-                        if recvData["value"] == "close":
-                            print "Server was disconnected by user"
+                        if recvData["value"] == "restart":
+                            print "Server was restarted by user"
+                            print "------------------------------------------------------------------------------"
                             connected = False
                             break
                         if recvData["value"] == "stop":
+                            print "Server was disconnected by user"
+                            print "------------------------------------------------------------------------------"
                             print "Server listenning on [{}:{}]...".format(HOST, PORT)
                             break
                     else:
@@ -167,14 +170,26 @@ while True:
                         # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                         process = subprocess.call(cmd, shell=True)
                     # process.communicate(input=cmdJSON.encode())
-                except Exception, error:
-                    print "Error: " + str(error)
-                if conn:
                     sendData = {
                         "argv":"status",
                         "value":"finished"
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
+                except Exception, error:
+                    # print "Error: " + str(error)
+                    sendData = {
+                        "argv":"status",
+                        "value":str(error)
+                    }
+                    sendJSON = json.dumps(sendData)
+                    conn.sendall((sendJSON + "\n").encode())
+                # if conn:
+                #     sendData = {
+                #         "argv":"status",
+                #         "value":"finished"
+                #     }
+                #     sendJSON = json.dumps(sendData)
+                #     conn.sendall((sendJSON + "\n").encode())
                 print "------------------------------------------------------------------------------"
     if not connected: break

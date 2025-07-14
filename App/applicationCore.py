@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
 
 EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
-          "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com", "kiet.huynh@terralogic.com"]
+          "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com"]
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -150,12 +150,19 @@ class MainWindow(QMainWindow):
                     QMessageBox.information(
                         self,
                         "Information",
-                        f"The scheduled task {self.uic.txtTicket.text()} has successfully been created.\nDate: {self.uic.txtDate.text()}\nTime: {self.uic.txtTime.text()}",
+                        f"The scheduled task {self.uic.txtTicket.text()} has successfully been created.\nLocal Date: {self.uic.txtDate.text()}\nLocal Time: {self.uic.txtTime.text()}",
                         QMessageBox.StandardButton.Ok
                     )
                     self.uic.btnOK.setEnabled(True)
                     self.uic.btnCancel.setEnabled(True)
                     self.uic.btnConDis.setEnabled(True)
+                else:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"The scheduled task {self.uic.txtTicket.text()} has unsuccessfully been created.",
+                        QMessageBox.StandardButton.Ok
+                    )
 
     def runAct(self):
         ticket = self.uic.txtTicket.text()

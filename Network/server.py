@@ -36,7 +36,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if len(recvData) == 2:
                     if recvData["argv"] == "server":
                         if recvData["value"] == "init":
-                            print("Collect available data for client")
+                            print("Request to collect available data from client")
                             files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                        if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                             folders = [name for name in os.listdir(testDir) 
@@ -50,20 +50,24 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             }
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
+                            print("Collect available data successful")
                             print("------------------------------------------")
                             continue
-                        elif recvData["value"] == "close" or recvData["value"] == "stop":
+                        elif recvData["value"] == "restart" or recvData["value"] == "stop":
                             sendData = {
                                 "argv":"client",
                                 "value":"disconnected"
                             }
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
-                            if recvData["value"] == "close":
-                                print("Server was disconnected by user")
+                            if recvData["value"] == "restart":
+                                print("Server was restarted by user")
+                                print("------------------------------------------")
                                 connected = False
                                 break
                             if recvData["value"] == "stop":
+                                print("Server was disconnected by user")
+                                print("------------------------------------------")
                                 print(f"Server listenning [{HOST}:{PORT}]...")
                                 break
                         else:
@@ -89,6 +93,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             fileName = recvData["value"][0] + ".exe"
                             fileSize = int(recvData["value"][1])
                             destPath = os.path.join(buildDir, fileName)
+                            # print "destPath: {}".format(destPath)
+                            # print "fileName: {}".format(fileName)
+                            # print "fileSize: {}".format(str(fileSize))
                             with open(destPath, 'wb') as f:
                                 size = 0
                                 while size < fileSize:
@@ -161,14 +168,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         else:
                             # process = subprocess.run(cmd, shell=True, input=cmdJSON.encode())
                             process = subprocess.call(cmd, shell=True)
-                    except Exception as error:
-                        print("Error: " + error)
-                    if conn:
                         sendData = {
                             "argv":"status",
                             "value":"finished"
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
+                    except Exception as error:
+                        # print("Error: " + error)
+                        sendData = {
+                            "argv":"status",
+                            "value":str(error)
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                    # if conn:
+                    #     sendData = {
+                    #         "argv":"status",
+                    #         "value":"finished"
+                    #     }
+                    #     sendJSON = json.dumps(sendData)
+                    #     conn.sendall((sendJSON + "\n").encode())
                     print("------------------------------------------")
         if not connected: break

@@ -5,6 +5,11 @@ import json
 
 # Release: pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py
 # Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 16:47 03/07/2025 sangx.phan@intel.com|thex.do@intel.com|tuanx.nguyen@intel.com
+# Usage:
+#   - python client.py local|remote|network
+#   - server init
+#   - server restart
+#   - server stop
 
 if len(sys.argv) < 2:
     print("Usage: python client.py [local|remote|network]")
@@ -30,39 +35,41 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         if msg == "": continue
 #--------------------------------------------------------------------------------
         msgSplit = msg.split(" ")
-        if len(msgSplit) < 6:
-            if (msgSplit[0] != "server"):
-                if msgSplit[1] != "init" and msgSplit[1] != "close" and msgSplit[1] != "stop":
-                    print("ERROR: Incorrect request\nTo disconnect type: server close|stop")
-                    print("------------------------------------------")
-                    continue
+        if (msgSplit[0] != "server"):
+            if msgSplit[1] != "init" and msgSplit[1] != "restart" and msgSplit[1] != "stop":
+                print("ERROR: Incorrect request\nTo disconnect type: server restart|stop")
+                print("------------------------------------------")
+                continue
             sendData = {
                 "argv":msgSplit[0],
                 "value":msgSplit[1]
             }
         else:
-            sendData = {
-                "ticket-id":msgSplit[0],
-                "build-version-name":msgSplit[1],
-                "build-version-size":msgSplit[2],
-                "test-suites":msgSplit[3].split("|"),
-                "schedule":[msgSplit[4], msgSplit[5]],
-                "reports":msgSplit[6].split("|")
-            }
+            print("ERROR: Incorrect request")
+            print("------------------------------------------")
+            continue
+            # sendData = {
+            #     "ticket-id":msgSplit[0],
+            #     "build-version-name":msgSplit[1],
+            #     "build-version-size":msgSplit[2],
+            #     "test-suites":msgSplit[3].split("|"),
+            #     "schedule":[msgSplit[4], msgSplit[5]],
+            #     "reports":msgSplit[6].split("|")
+            # }
         sendJSON = json.dumps(sendData)
 #--------------------------------------------------------------------------------
         s.sendall((sendJSON + "\n").encode())
-        if (len(msgSplit) == 6) and (msgSplit[2] != "0"):
-            filePath = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\{msgSplit[1]}.exe"
-            with open(filePath, 'rb') as f:
-                while True:
-                    bin = f.read(1024)
-                    if not bin:
-                        break
-                    s.sendall(bin)
+        # if (len(msgSplit) == 6) and (msgSplit[2] != "0"):
+        #     filePath = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\{msgSplit[1]}.exe"
+        #     with open(filePath, 'rb') as f:
+        #         while True:
+        #             bin = f.read(1024)
+        #             if not bin:
+        #                 break
+        #             s.sendall(bin)
         print(json.dumps(sendData, indent=2))
         print("------------------------------------------")
-        if msgSplit[0] == "server" and msgSplit[1] == "close": break
+        if msgSplit[0] == "server" and msgSplit[1] == "restart": break
         while True:
             recvJSON = ""
             while not recvJSON.endswith("\n"):
@@ -75,39 +82,40 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 except json.JSONDecodeError as e:
                     print(e)
                 print("***Data details:")
-                if (len(recvData) == 2):
-                    argv = recvData["argv"]
-                    value = recvData["value"]
-                    print(f"argv:\t{argv}")
-                    if recvData["argv"] == "client":
-                        if recvData["value"] == "disconnected":
-                            print(f"value:\t{value}")
-                            connected = False
-                        elif recvData["value"] == "finished":
-                            print(f"value:\t{value}")
-                        elif recvData["value"] == "error":
-                            print(f"value:\t{value}")
-                        else:
-                            buildVersions = recvData["value"]["build-version"]
-                            testSuites = recvData["value"]["test-suites"]
-                            print("value:\t")
-                            print("\tBuild versions:")
-                            for i in range(len(buildVersions)):
-                                print(f"\t\t{buildVersions[i]}")
-                            print("\tTest suites:")
-                            for i in range(len(testSuites)):
-                                print(f"\t\t{testSuites[i]}")
-                    elif recvData["argv"] == "status":
-                        if recvData["value"] == "running":
-                            print(f"value:\t{value}")
-                            print("------------------------------------------")
-                            continue
-                        elif recvData["value"] == "finished":
-                            print(f"value:\t{value}")
-                    elif recvData["argv"] == "processing":
+                argv = recvData["argv"]
+                value = recvData["value"]
+                print(f"argv:\t{argv}")
+                if recvData["argv"] == "client":
+                    if recvData["value"] == "disconnected":
                         print(f"value:\t{value}")
-                        print("------------------------------------------")
-                        continue
+                        connected = False
+                    # elif recvData["value"] == "finished":
+                    #     print(f"value:\t{value}")
+                    elif recvData["value"] == "error":
+                        print(f"value:\t{value}")
+                    else:
+                        buildVersions = recvData["value"]["build-version"]
+                        testSuites = recvData["value"]["test-suites"]
+                        print("value:\t")
+                        print("\tBuild versions:")
+                        for i in range(len(buildVersions)):
+                            print(f"\t\t{buildVersions[i]}")
+                        print("\tTest suites:")
+                        for i in range(len(testSuites)):
+                            print(f"\t\t{testSuites[i]}")
+                # elif recvData["argv"] == "status":
+                #     if recvData["value"] == "running":
+                #         print(f"value:\t{value}")
+                #         print("------------------------------------------")
+                #         continue
+                #     elif recvData["value"] == "finished":
+                #         print(f"value:\t{value}")
+                #     elif recvData["value"] == "successful":
+                #         print(f"value:\t{value}")
+                # elif recvData["argv"] == "updated":
+                #     print(f"value:\t{value}")
+                #     print("------------------------------------------")
+                #     continue
                 print("------------------------------------------")
             break
         if not connected: break
