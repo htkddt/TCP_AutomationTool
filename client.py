@@ -35,7 +35,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         if msg == "": continue
 #--------------------------------------------------------------------------------
         msgSplit = msg.split(" ")
-        if (msgSplit[0] != "server"):
+        if (msgSplit[0] == "server"):
             if msgSplit[1] != "init" and msgSplit[1] != "restart" and msgSplit[1] != "stop":
                 print("ERROR: Incorrect request\nTo disconnect type: server restart|stop")
                 print("------------------------------------------")
