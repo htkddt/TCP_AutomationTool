@@ -86,14 +86,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 value = recvData["value"]
                 print(f"argv:\t{argv}")
                 if recvData["argv"] == "client":
-                    if recvData["value"] == "disconnected":
-                        print(f"value:\t{value}")
-                        connected = False
-                    # elif recvData["value"] == "finished":
-                    #     print(f"value:\t{value}")
-                    elif recvData["value"] == "error":
-                        print(f"value:\t{value}")
-                    else:
+                    recvValue = recvData.get("value")
+                    if isinstance(recvValue, dict):
+                        print(f"size:\t{len(recvValue)}")
                         buildVersions = recvData["value"]["build-version"]
                         testSuites = recvData["value"]["test-suites"]
                         print("value:\t")
@@ -103,6 +98,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         print("\tTest suites:")
                         for i in range(len(testSuites)):
                             print(f"\t\t{testSuites[i]}")
+                    else:
+                        if recvData["value"] == "disconnected":
+                            print(f"value:\t{value}")
+                            connected = False
+                        # elif recvData["value"] == "finished":
+                        #     print(f"value:\t{value}")
+                        elif recvData["value"] == "error":
+                            print(f"value:\t{value}")
+                        elif recvData["value"] == "init":
+                            print(f"value:\t{value}")                        
                 # elif recvData["argv"] == "status":
                 #     if recvData["value"] == "running":
                 #         print(f"value:\t{value}")
