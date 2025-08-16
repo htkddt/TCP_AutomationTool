@@ -12,15 +12,15 @@ import json
 #   - server stop
 
 if len(sys.argv) < 2:
-    print("Usage: python client.py [local|remote|network]")
+    print("Usage: python client.py [local|remote|server]")
     sys.exit(1)
 
 if (sys.argv[1] == "local"): 
     HOST = '127.0.0.1'
     PORT = 9999
-elif (sys.argv[1] == "network"):
-    HOST = '127.0.0.1'
-    PORT = 8888
+elif (sys.argv[1] == "server"):
+    HOST = '192.168.179.111'
+    PORT = 9999
 elif (sys.argv[1] == "remote"): 
     HOST = '10.148.98.226'
     PORT = 9999
