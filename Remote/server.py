@@ -93,9 +93,6 @@ while True:
                         fileName = recvData["value"][0] + ".exe"
                         fileSize = int(recvData["value"][1])
                         destPath = os.path.join(buildDir, fileName)
-                        # print "destPath: {}".format(destPath)
-                        # print "fileName: {}".format(fileName)
-                        # print "fileSize: {}".format(str(fileSize))
                         with open(destPath, 'wb') as f:
                             size = 0
                             while size < fileSize:
@@ -142,8 +139,6 @@ while True:
                 jsonFile = os.path.join(jsonDir, "input_{}.json".format(ticket))
                 with open(jsonFile, 'w') as f:
                     json.dump(cmdPARA, f)
-                # cmdJSON = json.dumps(cmdPARA)
-                # cmd = "python2 in-run_tst.py " + ticket + " bdd_test"
                 cmd = "schtasks /create /tn \"Task_{}\" /tr \"C:\\TanMai\\TuanNguyen\\run.bat {}\" /sc once /st {} /sd {}".format(ticket, ticket, timeValue, dateValue)
                 sendData = {
                     "argv":"status",
@@ -152,8 +147,6 @@ while True:
                 sendJSON = json.dumps(sendData)
                 conn.sendall((sendJSON + "\n").encode())
                 try:
-                    # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                    # process.communicate(input=cmdJSON.encode())
                     process = subprocess.call(cmd, shell=True)
                     sendData = {
                         "argv":"status",
@@ -162,19 +155,11 @@ while True:
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
                 except Exception, error:
-                    # print "Error: " + str(error)
                     sendData = {
                         "argv":"status",
                         "value":str(error)
                     }
                     sendJSON = json.dumps(sendData)
                     conn.sendall((sendJSON + "\n").encode())
-                # if conn:
-                #     sendData = {
-                #         "argv":"status",
-                #         "value":"finished"
-                #     }
-                #     sendJSON = json.dumps(sendData)
-                #     conn.sendall((sendJSON + "\n").encode())
                 print "------------------------------------------------------------------------------"
     if not connected: break
