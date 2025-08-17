@@ -102,8 +102,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         if recvData["value"] == "disconnected":
                             print(f"value:\t{value}")
                             connected = False
-                        elif recvData["value"] == "finished":
-                            print(f"value:\t{value}")
+                        # elif recvData["value"] == "finished":
+                        #     print(f"value:\t{value}")
                         elif recvData["value"] == "error":
                             print(f"value:\t{value}")
                         elif recvData["value"] == "init":
