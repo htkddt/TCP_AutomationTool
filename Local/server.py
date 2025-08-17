@@ -8,10 +8,8 @@ platforms = {"Windows": "Windows", "Linux": "Linux"}
 os_system = platform.system()
 
 jsonDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local"
-buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN\\"
-testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\"
-#buildDir = f"D:\\A_TerraLogic\\TTSApplication"
-#testDir = f"D:\\A_TerraLogic\\"
+buildDir = f"C:\\Users\\tuanng4x\\Workspace\\SVN"
+testDir = f"C:\\Users\\tuanng4x\\Workspace\\Tickets\\Suite_nocstudio"
 
 HOST = '127.0.0.1'
 PORT = 9999
@@ -38,7 +36,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if len(recvData) == 2:
                     if recvData["argv"] == "server":
                         if recvData["value"] == "init":
-                            print("Collect available data for client")
+                            print("Request to collect available data from client")
                             files = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
                                        if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
                             folders = [name for name in os.listdir(testDir) 
@@ -52,20 +50,24 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             }
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
+                            print("Collect available data successful")
                             print("------------------------------------------")
                             continue
-                        elif recvData["value"] == "close" or recvData["value"] == "stop":
+                        elif recvData["value"] == "restart" or recvData["value"] == "stop":
                             sendData = {
                                 "argv":"client",
                                 "value":"disconnected"
                             }
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
-                            if recvData["value"] == "close":
-                                print("Server was disconnected by user")
+                            if recvData["value"] == "restart":
+                                print("Server was restarted by user")
+                                print("------------------------------------------")
                                 connected = False
                                 break
                             if recvData["value"] == "stop":
+                                print("Server was disconnected by user")
+                                print("------------------------------------------")
                                 print(f"Server listenning [{HOST}:{PORT}]...")
                                 break
                         else:
@@ -76,6 +78,40 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
                             continue
+                    elif recvData["argv"] == "header":
+                        if recvData["value"] == "update":
+                            filesUpdated = [os.path.splitext(name)[0] for name in os.listdir(buildDir) 
+                                            if os.path.isfile(os.path.join(buildDir, name)) and name.endswith('.exe')]
+                            sendData = {
+                                "argv":"updated",
+                                "value": filesUpdated
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                        else:
+                            print("Request to add new build file from client")
+                            fileName = recvData["value"][0] + ".exe"
+                            fileSize = int(recvData["value"][1])
+                            destPath = os.path.join(buildDir, fileName)
+                            # print "destPath: {}".format(destPath)
+                            # print "fileName: {}".format(fileName)
+                            # print "fileSize: {}".format(str(fileSize))
+                            with open(destPath, 'wb') as f:
+                                size = 0
+                                while size < fileSize:
+                                    bin = conn.recv(min(4096, fileSize - size))
+                                    if not bin:
+                                        break
+                                    f.write(bin)
+                                    size += len(bin)
+                            sendData = {
+                                "argv":"status",
+                                "value":"successful"
+                            }
+                            sendJSON = json.dumps(sendData)
+                            conn.sendall((sendJSON + "\n").encode())
+                            print("Save build successful")
+                            print("------------------------------------------")
                     else:
                         sendData = {
                             "argv":"client",
@@ -89,24 +125,24 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 else:
                     ticket = recvData["ticket-id"]
                     buildName = recvData["build-version-name"] + ".exe"
-                    buildSize = int(recvData["build-version-size"])
-                    if buildSize != 0:
-                        destPath = os.path.join(buildDir, buildName)
-                        with open(destPath, 'wb') as f:
-                            size = 0
-                            while size < buildSize:
-                                bin = conn.recv(min(4096, buildSize - size))
-                                if not bin:
-                                    break
-                                f.write(bin)
-                                size += len(bin)
+                    # buildSize = int(recvData["build-version-size"])
+                    # if buildSize != 0:
+                    #     destPath = os.path.join(buildDir, buildName)
+                    #     with open(destPath, 'wb') as f:
+                    #         size = 0
+                    #         while size < buildSize:
+                    #             bin = conn.recv(min(4096, buildSize - size))
+                    #             if not bin:
+                    #                 break
+                    #             f.write(bin)
+                    #             size += len(bin)
                     testSuites = recvData["test-suites"]
                     schedule = recvData["schedule"]
                     timeValue = schedule[0]
                     dateValue = schedule[1]
                     reports = recvData["reports"]
-                    # isExistingTask = os.system(f'schtasks /query /tn "{ticket}" >nul')
-                    # if isExistingTask == 0: os.system(f'schtasks /delete /tn "{ticket}" /f')
+                    isExistingTask = os.system(f'schtasks /query /tn "Task_{ticket}" >nul 2>&1')
+                    if isExistingTask == 0: os.system(f'schtasks /delete /tn "Task_{ticket}" /f')
                     cmdPARA = {
                         "ticket-id":ticket,
                         "build-version-name":buildName,
@@ -114,13 +150,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         "schedule":schedule,
                         "reports":reports
                     }
-                    jsonFile = os.path.join(jsonDir, "input.json")
+                    jsonFile = os.path.join(jsonDir, f"input_{ticket}.json")
                     with open(jsonFile, 'w') as f:
                         json.dump(cmdPARA, f)
                     # cmdJSON = json.dumps(cmdPARA)
-                    # cmd = f"python in-run_tst.py {ticket} bdd_test"
-                    cmd = f"schtasks /create /tn \"{ticket}\" /tr \"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\run.bat\" /sc once /st {timeValue}"
-                    # print(f"CMD:{cmd}")
+                    # cmd = f"python in-run_tst.py bdd_test"
+                    cmd = f"schtasks /create /tn \"Task_{ticket}\" /tr \"C:\\Users\\tuanng4x\\Workspace\\Tickets\\TCP_AutomationTool\\Local\\run.bat {ticket}\" /sc once /st {timeValue} /sd {dateValue}"
                     sendData = {
                         "argv":"status",
                         "value":"running"
@@ -134,14 +169,26 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         else:
                             # process = subprocess.run(cmd, shell=True, input=cmdJSON.encode())
                             process = subprocess.call(cmd, shell=True)
-                    except Exception as error:
-                        print("Error: " + error)
-                    if conn:
                         sendData = {
                             "argv":"status",
                             "value":"finished"
                         }
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
+                    except Exception as error:
+                        # print("Error: " + error)
+                        sendData = {
+                            "argv":"status",
+                            "value":str(error)
+                        }
+                        sendJSON = json.dumps(sendData)
+                        conn.sendall((sendJSON + "\n").encode())
+                    # if conn:
+                    #     sendData = {
+                    #         "argv":"status",
+                    #         "value":"finished"
+                    #     }
+                    #     sendJSON = json.dumps(sendData)
+                    #     conn.sendall((sendJSON + "\n").encode())
                     print("------------------------------------------")
         if not connected: break

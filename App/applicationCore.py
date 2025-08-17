@@ -7,8 +7,9 @@ from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QCheckBox, QPushButton, QToolButton, 
                              QDialog, QCalendarWidget, QMenu, QSizePolicy, QVBoxLayout, QHBoxLayout, 
-                             QDial, QLabel, QTimeEdit)
+                             QDial, QLabel, QMessageBox, QFileDialog)
 
+from datetime import datetime, timedelta, timezone
 from applicationUI import MainWindowUI
 
 EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
@@ -30,6 +31,7 @@ class MainWindow(QMainWindow):
         self.socket.responseFinished.connect(self.serverResponseAct)
 
         self.uic.btnConDis.clicked.connect(self.establishConnectAct)
+        self.uic.btnAddBuildVersion.clicked.connect(self.addBuildAct)
         self.uic.btnOK.clicked.connect(self.runAct)
         self.uic.btnCancel.clicked.connect(self.clearSelection)
         self.uic.txtDate.mousePressEvent = lambda event: self.showDateDialog()
@@ -60,7 +62,19 @@ class MainWindow(QMainWindow):
                     self.uic.layoutTestSuites.removeWidget(checkbox)
                     checkbox.setParent(None)
                     checkbox.deleteLater()
+            self.uic.txtTime.setText("hh:mm:ss")
+            self.uic.txtDate.setText("dd/mm/yyyy")
             self.clearCheckedItems(self.uic.layoutReports)
+
+    def close(self):
+        if self.connected:
+            sendData = {
+                "argv":"server",
+                "value":"stop"
+            }
+            self.socket.clientRequest(sendData)
+            while True:
+                if not self.connected: break
 
     def initData(self, connected):
         if not connected: return
@@ -69,12 +83,40 @@ class MainWindow(QMainWindow):
             "value":"init"
         }
         self.socket.clientRequest(sendData)
+        self.connected = True
+
+    def addBuildAct(self):
+        filePath, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open file",
+            "",
+            "Executable Files (*.exe);;All Files (*)"
+        )
+
+        if filePath:
+            fileName = filePath.split("/")[-1].split(".")[0]
+            fileSize = os.path.getsize(filePath)
+            sendData = {
+                "argv":"header",
+                "value":[fileName, str(fileSize)]
+            }
+            # print(f"filePath: {filePath}")
+            # print(f"fileName: {fileName}")
+            # print(f"fileSize: {str(fileSize)}")
+            self.socket.clientRequest(sendData)
+            with open(filePath, 'rb') as f:
+                while True:
+                    bin = f.read(4096)
+                    if not bin:
+                        break
+                    self.socket.clientRequest(bin, True)
 
     def serverResponseAct(self, recvData):
         if (len(recvData) == 2):
             if recvData["argv"] == "client":
                 if recvData["value"] == "disconnected":
                     self.socket.stop()
+                    self.connected = False
                 elif recvData["value"] == "finished":
                     self.uic.btnOK.setEnabled(True)
                     self.uic.btnCancel.setEnabled(True)
@@ -88,26 +130,74 @@ class MainWindow(QMainWindow):
                         checkbox = QCheckBox(test)
                         self.uic.layoutTestSuites.addWidget(checkbox)
                     self.uic.layoutTestSuites.addStretch()
+            elif recvData["argv"] == "updated":
+                buildUpdated = recvData["value"]
+                for build in buildUpdated:
+                    self.uic.cBoxBuildVersions.addItem(build)
             elif recvData["argv"] == "status":
-                if recvData["value"] == "running":
+                if recvData["value"] == "successful":
+                    if (self.uic.cBoxBuildVersions.count() > 0): self.uic.cBoxBuildVersions.clear()
+                    sendData = {
+                        "argv":"header",
+                        "value":"update"
+                    }
+                    self.socket.clientRequest(sendData)
+                elif recvData["value"] == "running":
                     self.uic.btnOK.setEnabled(False)
                     self.uic.btnCancel.setEnabled(False)
                     self.uic.btnConDis.setEnabled(False)
                 elif recvData["value"] == "finished":
+                    QMessageBox.information(
+                        self,
+                        "Information",
+                        f"The scheduled task {self.uic.txtTicket.text()} has successfully been created.\nLocal Date: {self.uic.txtDate.text()}\nLocal Time: {self.uic.txtTime.text()}",
+                        QMessageBox.StandardButton.Ok
+                    )
                     self.uic.btnOK.setEnabled(True)
                     self.uic.btnCancel.setEnabled(True)
                     self.uic.btnConDis.setEnabled(True)
+                else:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"The scheduled task {self.uic.txtTicket.text()} has unsuccessfully been created.",
+                        QMessageBox.StandardButton.Ok
+                    )
 
     def runAct(self):
         ticket = self.uic.txtTicket.text()
         test = self.getCheckedItems(self.uic.layoutTestSuites)
-        schedule = [self.uic.txtTime.text(), self.uic.txtDate.text()]
+        time = self.uic.txtTime.text()
+        date = self.uic.txtDate.text()
         reports = self.getCheckedItems(self.uic.layoutReports)
-        if (ticket == "") or (len(test) == 0) or (len(reports) == 0): return
+        if (ticket == "") or (len(test) == 0) or (len(reports) == 0) or (time == "hh:mm:ss") or (date == "dd/mm/yyyy"): return
+
+        time = time.split(":")
+        hour = int(time[0])
+        minute = int(time[1])
+        second = int(time[2])
+
+        date = date.split("/")
+        day = int(date[0])
+        month = int(date[1])
+        year = int(date[2])
+
+        localTime = datetime(year, month, day, hour, minute, second)
+
+        localTimeZone = timezone(timedelta(hours=7))   # Local GMT+7
+        serverTimeZone = timezone(timedelta(hours=-7)) # Server GMT-7
+
+        localTime = localTime.replace(tzinfo=localTimeZone)
+        serverTime = localTime.astimezone(serverTimeZone)
+
+        timeValue = serverTime.strftime("%H:%M:%S")
+        dateValue = serverTime.strftime("%m/%d/%Y")
+
+        schedule = [timeValue, dateValue]
+
         sendData = {
             "ticket-id":ticket,
             "build-version-name":self.uic.cBoxBuildVersions.currentText(),
-            "build-version-size":"0",
             "test-suites":test,
             "schedule":schedule,
             "reports":reports
@@ -134,11 +224,11 @@ class MainWindow(QMainWindow):
         self.uic.txtTicket.clear()
         self.clearCheckedItems(self.uic.layoutTestSuites)
         self.clearCheckedItems(self.uic.layoutReports)
-
-    def showDateDialog(self):
-        dlg = DateDialog()  # Create default calendar and set that layout on dialog
 ##----------------------------------------------------------------------------------------------------------
 ##-------------------------Modify layout of month and year tool button--------------------------------------
+##----------------------------------------------------------------------------------------------------------
+    def showDateDialog(self):
+        dlg = DateDialog()  # Create default calendar and set that layout on dialog
         btnMonth = dlg.calendar.findChild(QToolButton, "qt_calendar_monthbutton")
         btnYear = dlg.calendar.findChild(QToolButton, "qt_calendar_yearbutton")
         if btnMonth:
@@ -174,9 +264,10 @@ class MainWindow(QMainWindow):
                     )
                 )
         btnYear.setMenu(menu)
-        dlg.setMinimumSize(625, 300)
+        dlg.setFixedSize(620, 300)
         dlg.dateSelected.connect(self.onDateSelected)
         dlg.exec_()
+##----------------------------------------------------------------------------------------------------------
 ##----------------------------------------------------------------------------------------------------------
 ##----------------------------------------------------------------------------------------------------------
     def showTimeDialog(self):
@@ -199,13 +290,13 @@ class TCPSocketConnection(QThread):
         self.HOST = ''
         self.Port = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("TCPSocket thread Finished Init")
+        # print("TCPSocket thread Finished Init")
 
     def run(self):
         try:
             self.socket.connect((self.HOST, self.Port))
-            print("Connection is established...")
-            print("------------------------------------------")
+            # print("Connection is established...")
+            # print("------------------------------------------")
             self.connected = True
             self.receiver = TCPSocketReceiver(self.socket)
             self.receiver.start()
@@ -223,15 +314,18 @@ class TCPSocketConnection(QThread):
             self.socket.close()
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = False
-        print("Disconnected")
+        # print("Disconnected")
 
     def serverAddress(self, HOST, Port):
         self.HOST = HOST
         self.Port = Port
 
-    def clientRequest(self, sendData):
-        sendJSON = json.dumps(sendData)
-        self.socket.sendall((sendJSON + "\n").encode())
+    def clientRequest(self, sendData, addBuild=False):
+        if addBuild:
+            self.socket.sendall(sendData)
+        else:
+            sendJSON = json.dumps(sendData)
+            self.socket.sendall((sendJSON + "\n").encode())
 
     def serverResponse(self, recvJSON):
         recvData = json.loads(recvJSON.strip())
@@ -263,7 +357,7 @@ class TCPSocketReceiver(QThread):
         self.running = False
         if self.socket:
             self.socket.shutdown(socket.SHUT_RDWR)
-        print("TCPSocketReceiver is close")
+        # print("TCPSocketReceiver is close")
 
 
 class TimeDialog(QDialog):
@@ -300,10 +394,6 @@ class TimeDialog(QDialog):
         self.secondDial.setNotchesVisible(True)
         self.secondDial.setWrapping(True)
 
-        self.hourDial.valueChanged.connect(self.update_label)
-        self.minuteDial.valueChanged.connect(self.update_label)
-        self.secondDial.valueChanged.connect(self.update_label)
-
         btnOK = QPushButton("OK")
         btnOK.setFont(font)
         btnOK.clicked.connect(self.emitTime)
@@ -336,10 +426,14 @@ class TimeDialog(QDialog):
         now = QTime.currentTime()
         self.hourDial.setValue(now.hour())
         self.minuteDial.setValue(now.minute())
-        self.minuteDial.setValue(now.second())
-        self.update_label()
+        self.secondDial.setValue(now.second())
+        self.updateLabel()
 
-    def update_label(self):
+        self.hourDial.valueChanged.connect(self.updateLabel)
+        self.minuteDial.valueChanged.connect(self.updateLabel)
+        self.secondDial.valueChanged.connect(self.updateLabel)
+
+    def updateLabel(self):
         h = self.hourDial.value()
         m = self.minuteDial.value()
         s = self.secondDial.value()
@@ -419,8 +513,27 @@ class DateDialog(QDialog):
         self.accept()
 
 if __name__ == "__main__":
+    # os.system('pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py')
+    # try:
+    #     import PyInstaller.__main__
+    # except ImportError:
+    #     import subprocess
+    #     subprocess.check_call(['pip', 'install', 'pyinstaller'])
+    #     import PyInstaller.__main__
+
+    # PyInstaller.__main__.run([
+    #     '--onefile',
+    #     '--noconsole',
+    #     '--name=TCPAutomation',
+    #     '--icon=nsicon.ico',
+    #     '--distpath=.',
+    #     './App/applicationCore.py'
+    # ])
+    # if os.path.exists("build"):
+    #     shutil.rmtree("build")
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.setMinimumSize(400, 600)
-    window.showMinimized()
+    window.show()
     sys.exit(app.exec())
