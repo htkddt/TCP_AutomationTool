@@ -125,17 +125,6 @@ while True:
             else:
                 ticket = recvData["ticket-id"]
                 buildName = recvData["build-version-name"] + ".exe"
-                # buildSize = int(recvData["build-version-size"])
-                # if buildSize != 0:
-                #     destPath = os.path.join(buildDir, buildName)
-                #     with open(destPath, 'wb') as f:
-                #         size = 0
-                #         while size < buildSize:
-                #             bin = conn.recv(min(4096, buildSize - size))
-                #             if not bin:
-                #                 break
-                #             f.write(bin)
-                #             size += len(bin)
                 testSuites = recvData["test-suites"]
                 schedule = recvData["schedule"]
                 timeValue = schedule[0]
@@ -163,13 +152,9 @@ while True:
                 sendJSON = json.dumps(sendData)
                 conn.sendall((sendJSON + "\n").encode())
                 try:
-                    if os_system == platforms["Linux"]:    
-                        # process = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                        process = subprocess.call(cmd)
-                    else:
-                        # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                        process = subprocess.call(cmd, shell=True)
+                    # process = subprocess.Popen(cmd.split(), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                     # process.communicate(input=cmdJSON.encode())
+                    process = subprocess.call(cmd, shell=True)
                     sendData = {
                         "argv":"status",
                         "value":"finished"
