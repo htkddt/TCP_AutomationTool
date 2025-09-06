@@ -6,19 +6,22 @@ import json
 # Release: pyinstaller --onefile --noconsole --name TCPAutomation --icon=nsicon.ico --distpath=. ./App/applicationCore.py
 # Cmd: GUI-ID NocStudio 0 tst1|tst2|tst3 16:47 03/07/2025 sangx.phan@intel.com|thex.do@intel.com|tuanx.nguyen@intel.com
 # Usage:
-#   - python client.py local|remote|network
+#   - python client.py server_windows|server_linux|local|remote
 #   - server init
 #   - server restart
 #   - server stop
 
 if len(sys.argv) < 2:
-    print("Usage: python client.py [local|remote|server]")
+    print("Usage: python client.py [server_windows|server_linux|local|remote]")
     sys.exit(1)
 
 if (sys.argv[1] == "local"): 
     HOST = '127.0.0.1'
     PORT = 9999
-elif (sys.argv[1] == "server"):
+elif (sys.argv[1] == "server_windows"): 
+    HOST = '127.0.0.1'
+    PORT = 8888
+elif (sys.argv[1] == "server_linux"):
     HOST = '192.168.179.111'
     PORT = 9999
 elif (sys.argv[1] == "remote"): 

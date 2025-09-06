@@ -1,9 +1,19 @@
-import sys
-import os
-from PyQt5.QtWidgets import QPushButton, QToolButton, QLabel, QLineEdit, QComboBox, QProgressBar, QScrollArea, QSizePolicy
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox, QDialog, QCalendarWidget, QMenu
+import pytz
+import datetime
+
+from tzlocal import get_localzone
+
+from PyQt5.QtWidgets import QPushButton, QLabel, QLineEdit, QComboBox, QProgressBar, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QGroupBox
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
+
+def format_timezone(tz_name: str) -> str:
+    tz = pytz.timezone(tz_name)
+    now = datetime.datetime.now(tz)
+    offset = now.strftime("%z")
+    offset_fmt = f"UTC{offset[:3]}:{offset[3:]}"
+    return f"{offset_fmt} — {tz_name}"
 
 class MainWindowUI(object):
     def initUI(self, mainWindow):
@@ -19,48 +29,101 @@ class MainWindowUI(object):
 
         self.mainLayout = QVBoxLayout()
 
-        self.initConnectionGroup()
+        self.initConfigGroup()
+        self.initTimeZoneGroup()
         self.initPropertiesGroup()
         self.initProcessingGroup()
 
         centralWidget.setLayout(self.mainLayout)
 
-    def initConnectionGroup(self):
+    def initConfigGroup(self):
         grConnection = QGroupBox()
         grConnection.setTitle("CONNECTION")
         grConnection.setFont(self.defaultFontBold)
-
-        mainLayout = QVBoxLayout(grConnection)
-        componentLayout = QGridLayout()
-
+        connectLayout = QVBoxLayout(grConnection)
+        connectComponentLayout = QGridLayout()
         lbIP = QLabel("HOST", grConnection)
         lbIP.setFont(self.defaultFontRegular)
         lbIP.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
         self.txtHOST = QLineEdit("10.148.98.226", grConnection)
         self.txtHOST.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
         lbPort = QLabel("Port", grConnection)
         lbPort.setFont(self.defaultFontRegular)
         lbPort.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
         self.txtPort = QLineEdit("9999", grConnection)
         self.txtPort.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
-        componentLayout.addWidget(lbIP, 0, 0, Qt.AlignmentFlag.AlignVCenter)
-        componentLayout.addWidget(self.txtHOST, 0, 1)
-        componentLayout.addWidget(lbPort, 1, 0, Qt.AlignmentFlag.AlignVCenter)
-        componentLayout.addWidget(self.txtPort, 1, 1)
-
+        connectComponentLayout.addWidget(lbIP, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+        connectComponentLayout.addWidget(self.txtHOST, 0, 1)
+        connectComponentLayout.addWidget(lbPort, 1, 0, Qt.AlignmentFlag.AlignVCenter)
+        connectComponentLayout.addWidget(self.txtPort, 1, 1)
         self.btnConDis = QPushButton("Connect to server", grConnection)
         self.btnConDis.setFont(self.defaultFontBold)
+        connectLayout.addLayout(connectComponentLayout)
+        connectLayout.addSpacing(5)
+        connectLayout.addWidget(self.btnConDis, alignment=Qt.AlignmentFlag.AlignHCenter)
+        grConnection.setLayout(connectLayout)
 
-        mainLayout.addLayout(componentLayout)
-        mainLayout.addSpacing(5)
-        mainLayout.addWidget(self.btnConDis, alignment=Qt.AlignmentFlag.AlignHCenter)
+        grTasks = QGroupBox()
+        grTasks.setTitle("TASKS")
+        grTasks.setFont(self.defaultFontBold)
+        tasksLayout = QVBoxLayout(grTasks)
+        scrollTasks = QScrollArea(grTasks)
+        scrollTasks.setFont(self.defaultFontRegular)
+        scrollTasks.setWidgetResizable(True)
+        containerTasks = QWidget()
+        self.layoutTasks = QVBoxLayout(containerTasks)
+        self.layoutTasks.setSpacing(5)
+        self.layoutTasks.setContentsMargins(5, 5, 5, 5)
+        scrollTasks.setWidget(containerTasks)
+        tasksLayout.addWidget(scrollTasks)
 
-        grConnection.setLayout(mainLayout)
-        self.mainLayout.addWidget(grConnection)
+        grConnection.setLayout(connectLayout)
+        grTasks.setLayout(tasksLayout)
+
+        layout = QHBoxLayout()
+        layout.addWidget(grConnection)
+        layout.addWidget(grTasks)
+
+        mainWidget = QWidget()
+        mainWidget.setLayout(layout)
+        self.mainLayout.addWidget(mainWidget)
+
+    def initTimeZoneGroup(self):
+        grTime = QGroupBox()
+        grTime.setTitle("TIME ZONE")
+        grTime.setFont(self.defaultFontBold)
+        timeLayout = QVBoxLayout(grTime)
+        timeComponentLayout = QGridLayout()
+        
+        lbLocal = QLabel("Local Time Zone", grTime)
+        lbLocal.setFont(self.defaultFontRegular)
+        lbLocal.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.cbLocalTime = QComboBox(grTime)
+        lbServer = QLabel("Server Time Zone", grTime)
+        lbServer.setFont(self.defaultFontRegular)
+        lbServer.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.cbServerTime = QComboBox(grTime)
+
+        timezones = pytz.all_timezones
+        for tz_name in timezones:
+            display_text = format_timezone(tz_name)
+            self.cbLocalTime.addItem(display_text, tz_name)
+            self.cbServerTime.addItem(display_text, tz_name)
+        local_tz = str(get_localzone())
+        for i in range(self.cbLocalTime.count()):
+            if local_tz in self.cbLocalTime.itemData(i):
+                self.cbLocalTime.setCurrentIndex(i)
+                self.cbServerTime.setCurrentIndex(i)
+                break
+        
+        timeComponentLayout.addWidget(lbLocal, 0, 0, Qt.AlignmentFlag.AlignVCenter)
+        timeComponentLayout.addWidget(self.cbLocalTime, 0, 1)
+        timeComponentLayout.addWidget(lbServer, 1, 0, Qt.AlignmentFlag.AlignVCenter)
+        timeComponentLayout.addWidget(self.cbServerTime, 1, 1)
+        timeLayout.addLayout(timeComponentLayout)
+
+        grTime.setLayout(timeLayout)
+        self.mainLayout.addWidget(grTime)
 
     def initPropertiesGroup(self):
         grProperties = QGroupBox()

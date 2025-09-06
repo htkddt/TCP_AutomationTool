@@ -22,7 +22,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     while True:
         conn, addr = s.accept()
         print(f"Connected from {addr}")
-        print("------------------------------------------")
+        print("------------------------------------------------------------------------------")
         connected = True
         while True:
             recvJSON = ""
@@ -51,7 +51,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
                             print("Collect available data successful")
-                            print("------------------------------------------")
+                            print("------------------------------------------------------------------------------")
                             continue
                         elif recvData["value"] == "restart" or recvData["value"] == "stop":
                             sendData = {
@@ -62,12 +62,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             conn.sendall((sendJSON + "\n").encode())
                             if recvData["value"] == "restart":
                                 print("Server was restarted by user")
-                                print("------------------------------------------")
+                                print("------------------------------------------------------------------------------")
                                 connected = False
                                 break
                             if recvData["value"] == "stop":
                                 print("Server was disconnected by user")
-                                print("------------------------------------------")
+                                print("------------------------------------------------------------------------------")
                                 print(f"Server listenning [{HOST}:{PORT}]...")
                                 break
                         else:
@@ -111,7 +111,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             sendJSON = json.dumps(sendData)
                             conn.sendall((sendJSON + "\n").encode())
                             print("Save build successful")
-                            print("------------------------------------------")
+                            print("------------------------------------------------------------------------------")
                     else:
                         sendData = {
                             "argv":"client",
@@ -120,7 +120,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         sendJSON = json.dumps(sendData)
                         conn.sendall((sendJSON + "\n").encode())
                         print("ERROR: Incorrect request from client\nTo disconnect type: server stop or client stop")
-                        print("------------------------------------------")
+                        print("------------------------------------------------------------------------------")
                         continue
                 else:
                     ticket = recvData["ticket-id"]
@@ -190,5 +190,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     #     }
                     #     sendJSON = json.dumps(sendData)
                     #     conn.sendall((sendJSON + "\n").encode())
-                    print("------------------------------------------")
+                    print("------------------------------------------------------------------------------")
         if not connected: break

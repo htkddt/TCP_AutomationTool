@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 import json
+import pytz
 
 from PyQt5.QtCore import QThread, QDate, QTime, Qt, pyqtSignal
 from PyQt5.QtGui import QFont
@@ -14,6 +15,14 @@ from applicationUI import MainWindowUI
 
 EMAILS = ["sangx.phan@intel.com", "thex.do@intel.com", "tuanx.nguyen@intel.com", 
           "maix.tan@intel.com", "taix.them@intel.com", "thinhx.le@intel.com"]
+
+def format_timezone(tz_name: str) -> timezone:
+    offset_str = tz_name.split(" — ")[0]
+    sign = 1 if offset_str[3] == "+" else -1
+    hours = int(offset_str[4:6])
+    minutes = int(offset_str[7:9])
+    offset = timedelta(hours=sign*hours, minutes=sign*minutes)
+    return timezone(offset)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -184,8 +193,11 @@ class MainWindow(QMainWindow):
 
         localTime = datetime(year, month, day, hour, minute, second)
 
-        localTimeZone = timezone(timedelta(hours=7))   # Local GMT+7
-        serverTimeZone = timezone(timedelta(hours=-7)) # Server GMT-7
+        # localTimeZone = timezone(timedelta(hours=7))   # Local GMT+7
+        # serverTimeZone = timezone(timedelta(hours=-7)) # Server GMT-7
+
+        localTimeZone = format_timezone(self.uic.cbLocalTime.currentText()) # UTC+07:00 — Asia/Bangkok
+        serverTimeZone = format_timezone(self.uic.cbServerTime.currentText())
 
         localTime = localTime.replace(tzinfo=localTimeZone)
         serverTime = localTime.astimezone(serverTimeZone)
